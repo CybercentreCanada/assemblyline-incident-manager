@@ -339,7 +339,7 @@ class TestALIncidentSubmitter:
         file_sha_2 = "blahblahblah2"
         with open(file_sha_2, "wb") as f:
             f.write(b"yabadaba")
-        mocker.patch("al_incident_submitter.hash_table", return_value=[])
+        mocker.patch("assemblyline_incident_manager.al_incident_submitter.hash_table", return_value=[])
         with open(FILE_PATHS, "wb") as f:
             f.write(file_sha_1.encode() + b"\n" + file_sha_2.encode() + b"\n")
 
@@ -348,7 +348,7 @@ class TestALIncidentSubmitter:
         file_sha_3 = "hithere"
         with open(file_sha_3, "wb") as f:
             f.write(b"yabadaba")
-        mocker.patch("al_incident_submitter.hash_table", return_value=[])
+        mocker.patch("assemblyline_incident_manager.al_incident_submitter.hash_table", return_value=[])
         with open(FILE_PATHS, "wb") as f:
             f.write(file_sha_3.encode() + b"\n")
 
