@@ -214,7 +214,7 @@ class TestFileSubmitter:
         with open(API_KEY_FILE, "w") as f:
             f.write("blah")
 
-        mocker.patch("helper.get_client", return_value="blah")
+        mocker.patch("assemblyline_incident_manager.helper.get_client", return_value="blah")
         mocker.patch("assemblyline_incident_manager.al_incident_submitter._test_ingest_file")
         mocker.patch("assemblyline_incident_manager.al_incident_submitter._ingest_file")
 

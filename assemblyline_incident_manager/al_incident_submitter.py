@@ -15,7 +15,7 @@ from threading import Thread
 from queue import Queue
 
 from assemblyline_client import Client4
-from helper import init_logging, print_and_log, validate_parameters, prepare_apikey, safe_str, Client, prepare_query_value
+from assemblyline_incident_manager.helper import init_logging, print_and_log, validate_parameters, prepare_apikey, safe_str, Client, prepare_query_value
 
 # These are the names of the files which we will use for writing and reading information to
 # This contains the logs for this file

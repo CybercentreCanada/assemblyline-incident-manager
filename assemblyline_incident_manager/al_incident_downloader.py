@@ -19,7 +19,7 @@ from threading import Thread
 from queue import Queue
 
 from assemblyline_client import Client4
-from helper import init_logging, print_and_log, _validate_url, prepare_apikey, prepare_query_value, Client
+from assemblyline_incident_manager.helper import init_logging, print_and_log, _validate_url, prepare_apikey, prepare_query_value, Client
 
 # These are the names of the files which we will use for writing and reading information to
 LOG_FILE = "directory_downloader_log.csv"

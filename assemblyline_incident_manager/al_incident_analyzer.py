@@ -13,7 +13,7 @@ from time import sleep, time
 import os
 
 from assemblyline_client import get_client
-from helper import init_logging, print_and_log, _validate_url, prepare_apikey, prepare_query_value
+from assemblyline_incident_manager.helper import init_logging, print_and_log, _validate_url, prepare_apikey, prepare_query_value
 
 # These are the names of the files which we will use for writing and reading information to
 LOG_FILE = "al_incident_analyzer_log.csv"
