@@ -1,0 +1,98 @@
+name: build
+
+trigger:
+  tags:
+    include: ["v*"]
+pr: none
+
+pool:
+  vmImage: "ubuntu-18.04"
+
+stages:
+  - stage: build
+    jobs:
+      - job: build_package
+        displayName: Build Package
+        steps:
+          - task: UsePythonVersion@0
+            displayName: Set python version
+            inputs: { versionSpec: 3.8 }
+          - script: |
+              sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U wheel pip
+              python setup.py bdist_wheel
+          - publish: $(System.DefaultWorkingDirectory)/dist/
+            artifact: dist
+          - publish: $(System.DefaultWorkingDirectory)/pipelines/
+            artifact: pipelines
+          - publish: $(System.DefaultWorkingDirectory)/test/
+            artifact: test
+  - stage: test
+    jobs:
+      - job: run_test
+        strategy:
+          matrix:
+            python3_6:
+              python.version: "3.6"
+            python3_7:
+              python.version: "3.7"
+            Python3_8:
+              python.version: "3.8"
+            Python3_9:
+              python.version: "3.9"
+        timeoutInMinutes: 10
+        services:
+        steps:
+          - checkout: none
+          - task: UsePythonVersion@0
+            displayName: Set python version
+            inputs:
+              versionSpec: "$(python.version)"
+          - download: current
+            artifact: dist
+          - download: current
+            artifact: pipelines
+          - download: current
+            artifact: test
+            displayName: Pull Containers
+          - script: |
+              export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
+              sudo env "PATH=$PATH" python -m pip install -f dist/ "assemblyline-incident-manager[test]==${VERSION}"
+              sudo env "PATH=$PATH" python -m pip install -r test/requirements.txt
+            workingDirectory: $(Pipeline.Workspace)
+            displayName: Install assemblyline_incident_manager
+          - script: |
+              pytest -rsx -vv
+            workingDirectory: $(Pipeline.Workspace)/test
+            displayName: Test
+  - stage: deploy
+    jobs:
+      - job: deploy
+        displayName: Deploy packages and containers
+        variables:
+          - group: deployment-information
+        steps:
+          - task: UsePythonVersion@0
+            displayName: Set python version
+            inputs: { versionSpec: 3.8 }
+          - download: current
+            artifact: dist
+          - script: |
+              set -xv  # Echo commands before they are run
+              sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+              ls dist
+              twine upload --skip-existing --repository-url $TEST_REPOSITORY_URL dist/*
+            displayName: Deploy to Test PyPI
+            workingDirectory: $(Pipeline.Workspace)
+            env:
+              TWINE_USERNAME: $(twineUsername)
+              TWINE_PASSWORD: $(twinePassword)
+          - script: |
+              set -xv  # Echo commands before they are run
+              sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
+              ls dist
+              twine upload --skip-existing dist/*
+            displayName: Deploy to PyPI
+            workingDirectory: $(Pipeline.Workspace)
+            env:
+              TWINE_USERNAME: $(twineUsername)
+              TWINE_PASSWORD: $(twinePassword)
