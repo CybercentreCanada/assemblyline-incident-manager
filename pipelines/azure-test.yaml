@@ -28,13 +28,11 @@ jobs:
           versionSpec: "$(python.version)"
       - script: |
           set -x  # Echo commands before they are run
-          # Install depedency packages
           sudo apt-get update
           sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
           sudo env "PATH=$PATH" python -m pip install --no-cache-dir -U assemblyline_client click
-          sudo env "PATH=$PATH" python -m pip install --no-cache-dir -e . -r test/requirements.txt
+          sudo env "PATH=$PATH" python -m pip install -U --no-cache-dir -r `pwd`/test/requirements.txt
           sudo rm -rf /tmp/* /var/lib/apt/lists/* ~/.cache/pip
         displayName: Setup Environment
-      - script: |
-          pytest -rsx -vv
+      - script: python -m pytest --durations=10 -rsx -vv
         displayName: Test
