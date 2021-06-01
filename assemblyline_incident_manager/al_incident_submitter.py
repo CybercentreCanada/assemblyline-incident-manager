@@ -93,7 +93,7 @@ def get_id_from_data(file_path: str) -> str:
 def main(url: str, username: str, apikey: str, ttl: int, classification: str, service_selection: str, is_test: bool, path: str, fresh: bool, incident_num: str, resubmit_dynamic: bool, alert: bool, threads: int, dedup_hashes: bool, priority: int, do_not_verify_ssl: bool):
     """
     Example:
-    python al_incident_submitter.py --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/compromised/directory" --incident_num=123
+    al-incident_submitter --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/compromised/directory" --incident_num=123
     """
     global hash_table
     global total_file_count

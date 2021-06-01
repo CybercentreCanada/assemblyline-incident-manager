@@ -35,7 +35,7 @@ log = init_logging(LOG_FILE)
 def main(url: str, username: str, apikey: str, min_score: int, incident_num: str, is_test: bool):
     """
     Example:
-    python al_incident_analyzer.py --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+    al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
     """
     # Here is the query that we will be using to retrieve all submission details
     incident_num = prepare_query_value(incident_num)

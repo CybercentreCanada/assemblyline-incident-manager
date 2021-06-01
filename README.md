@@ -1,10 +1,10 @@
 # General Description
 This repository contains two Python scripts used for triaging compromised systems with Assemblyline.
-1. The "Pusher" (`al_incident_submitter.py`): pushes files from the compromised system to an Assemblyline
+1. The "Pusher" (`al-incident-submitter`): pushes files from the compromised system to an Assemblyline
 instance for analysis.
-2. The "Puller" (`al_incident_analyzer.py`): pulls the submissions from the
+2. The "Puller" (`al-incident-analyzer`): pulls the submissions from the
 Assemblyline instance and reports on if the submissions are safe/unsafe.
-3. The "Downloader" (`al_incident_downloader.py`): downloads files submitted to Assemblyline that are under a certain 
+3. The "Downloader" (`al-incident-downloader`): downloads files submitted to Assemblyline that are under a certain 
 score threshold, matching the folder structure of the files as they were submitted.
    
 
@@ -75,10 +75,10 @@ On the compromised machine...
 
 To get a sense of the options available to you:
 ```
-python3 al_incident_submitter.py --help
-Usage: al_incident_submitter.py [OPTIONS] COMMAND [ARGS]...
+al-incident-submitter --help
+Usage: al-incident-submitter [OPTIONS] COMMAND [ARGS]...
 
-  Example: python al_incident_submitter.py --url="https://<domain-of-Assemblyline-
+  Example: al-incident-submitter --url="https://<domain-of-Assemblyline-
   instance>" --username="<user-name>"
   --apikey="/path/to/file/containing/apikey"
   --classification="<classification>" --service_selection="<service-
@@ -145,10 +145,10 @@ On the non-compromised machine...
 
 To get a sense of the options available to you:
 ```
-python al_incident_analyzer.py --help
-Usage: al_incident_analyzer.py [OPTIONS] COMMAND [ARGS]...
+python al-incident-analyzer --help
+Usage: al-incident-analyzer [OPTIONS] COMMAND [ARGS]...
 
-  Example: python al_incident_analyzer.py --url="https://<domain-of-
+  Example: al-incident-analyzer --url="https://<domain-of-
   Assemblyline-instance>" --username="<user-name>"
   --apikey="/path/to/file/containing/apikey" --incident_num=123
 
@@ -182,10 +182,10 @@ On the machine where you want the "safe" files downloaded to...
 To get a sense of the options available to you:
 
 ```
-python al_incident_downloader.py --help
-Usage: al_incident_downloader.py [OPTIONS] COMMAND [ARGS]...
+python al-incident-downloader --help
+Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
 
-  Example: python al_incident_downloader.py --url="https://<domain-of-
+  Example: al-incident-downloader --url="https://<domain-of-
   Assemblyline-instance>" --username="<user-name>"
   --apikey="/path/to/file/containing/apikey" --incident_num=123
   --min_score=100 --download_path=/path/to/where/you/want/downloads
