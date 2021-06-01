@@ -23,9 +23,11 @@ access to the Assemblyline instance that you sent files to via the "Pusher".
 ## Prequisites
 For the machine(s) running the "Pusher", the "Puller", and the "Downloader":
 - You will need at least Python 3
-- You will need the `click` PIP module and its dependencies installed
-- You will need the `assemblyline_client` PIP module and its dependencies installed. 
-  [HOW-TO](https://cybercentrecanada.github.io/assemblyline4_docs/docs/user_manual/assemblyline_client.html)
+  - Download here: https://www.python.org/downloads/
+- If on Linux, you will need to install the following packages via APT/YUM: `libffi-dev`, `libssl-dev`
+  - By command line: (APT) `sudo apt-get install libffi-dev libssl-dev`, (YUM) `sudo yum install libffi-dev libssl-dev`
+  - By browser, download .deb files here: https://packages.debian.org/jessie/libffi-dev, https://packages.debian.org/jessie/libssl-dev
+- You will need the `assemblyline-incident-manager` PIP module and its dependencies installed
 - For the offline installation of these packages and libraries, see the Offline Installation section
 
 In general:
@@ -65,7 +67,7 @@ for x in `ls *.whl`;  do python3 -m pip install $x; done
 #### Windows
 - Download and install the most recent Python .msi installer from https://www.python.org/downloads/release. 
 - Upgrade PIP: `pyhton -m pip install --upgrade pip`
-- Install the required PIP packages: `python3 -m pip download assemblyline click`
+- Install the required PIP packages: `python3 -m pip download assemblyline-incident-manager`
 
 ## Run the thing!
 ### Pusher

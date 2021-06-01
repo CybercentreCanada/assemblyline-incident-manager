@@ -88,8 +88,8 @@ class TestResultAnalyzer:
     def test_main(case, command_line_options, dummy_al_client_instance, mocker):
         from click.testing import CliRunner
         from os import urandom, remove
-        from assemblyline_client_scripts.scripts.al_incident_analyzer import main, REPORT_FILE
-        mocker.patch("assemblyline_client_scripts.scripts.al_incident_analyzer.get_client", return_value=dummy_al_client_instance)
+        from assemblyline_incident_manager.al_incident_analyzer import main, REPORT_FILE
+        mocker.patch("assemblyline_incident_manager.al_incident_analyzer.get_client", return_value=dummy_al_client_instance)
 
         with open(API_KEY_FILE, "w") as f:
             f.write("blah")
@@ -115,7 +115,7 @@ class TestResultAnalyzer:
     @staticmethod
     def test_handle_overwrite(mocker):
         from os import urandom
-        from assemblyline_client_scripts.scripts.al_incident_analyzer import _handle_overwrite, REPORT_FILE
+        from assemblyline_incident_manager.al_incident_analyzer import _handle_overwrite, REPORT_FILE
 
         mocker.patch("builtins.input", return_value="n")
         assert _handle_overwrite() is False
@@ -135,5 +135,5 @@ class TestResultAnalyzer:
         ("blah,blah.blah", "blahblah.blah"),
     ])
     def test_prepare_file_name(file_name, expected_result):
-        from assemblyline_client_scripts.scripts.al_incident_analyzer import _prepare_file_name
+        from assemblyline_incident_manager.al_incident_analyzer import _prepare_file_name
         assert _prepare_file_name(file_name) == expected_result

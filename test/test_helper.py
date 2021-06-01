@@ -11,7 +11,7 @@ def log():
 class TestHelper:
     @staticmethod
     def test_init_logging():
-        from assemblyline_client_scripts.scripts.helper import init_logging
+        from assemblyline_incident_manager.helper import init_logging
         init_logging("blah.blah")
         assert True
 
@@ -23,7 +23,7 @@ class TestHelper:
         ("http://blah.com", None, ["Static Analysis", "Extraction", "Networking", "Antivirus"]),
     ])
     def test_validate_parameters(url, service_selection, expected_result, log):
-        from assemblyline_client_scripts.scripts.helper import validate_parameters
+        from assemblyline_incident_manager.helper import validate_parameters
         assert validate_parameters(log, url, service_selection) == expected_result
 
     @staticmethod
@@ -35,19 +35,19 @@ class TestHelper:
         ]
     )
     def test_validate_service_selection(services, expected_result, log):
-        from assemblyline_client_scripts.scripts.helper import _validate_service_selection
+        from assemblyline_incident_manager.helper import _validate_service_selection
         assert _validate_service_selection(log, services) == expected_result
 
     @staticmethod
     @pytest.mark.parametrize("url, expected_result", [("http://blah.com", True), ("not a url", False)])
     def test_validate_url(url, expected_result, log):
-        from assemblyline_client_scripts.scripts.helper import _validate_url
+        from assemblyline_incident_manager.helper import _validate_url
         assert _validate_url(log, url) == expected_result
 
     @staticmethod
     @pytest.mark.parametrize("log_level", [10, 20, 30, 40, 15])
     def test_print_and_log(log_level, log):
-        from assemblyline_client_scripts.scripts.helper import print_and_log, VALID_LOG_LEVELS
+        from assemblyline_incident_manager.helper import print_and_log, VALID_LOG_LEVELS
         illegal_surrogate_string = "blah blah blah \ud83d.txt"
         normal_string = "blah blah blah.txt"
 
@@ -71,7 +71,7 @@ class TestHelper:
     ])
     def test_prepare_apikey(value, expected_result):
         from os import remove
-        from assemblyline_client_scripts.scripts.helper import prepare_apikey
+        from assemblyline_incident_manager.helper import prepare_apikey
         apikey_bytes_path = "apikey_path_bytes.txt"
         apikey_path = "apikey_path.txt"
         with open(apikey_bytes_path, "wb") as f:
@@ -110,6 +110,6 @@ class TestHelper:
         ("bl\\ah", "bl\\\\ah"),
     ])
     def test_prepare_query_value(val, expected_result):
-        from assemblyline_client_scripts.scripts.helper import prepare_query_value
+        from assemblyline_incident_manager.helper import prepare_query_value
         assert prepare_query_value(val) == expected_result
 

@@ -47,7 +47,7 @@ class TestFileSubmitter:
     ])
     def test_get_id_from_data(data, expected_result):
         from os import remove
-        from assemblyline_client_scripts.scripts.al_incident_submitter import get_id_from_data
+        from assemblyline_incident_manager.al_incident_submitter import get_id_from_data
         SOME_FILE = "some_file.txt"
         with open(SOME_FILE, "wb") as f:
             f.write(b"blah")
@@ -207,7 +207,7 @@ class TestFileSubmitter:
         ),
     ])
     def test_main(case, command_line_options, mocker):
-        from assemblyline_client_scripts.scripts.al_incident_submitter import main, FILE_PATHS, SKIPPED_FILE_PATHS
+        from assemblyline_incident_manager.al_incident_submitter import main, FILE_PATHS, SKIPPED_FILE_PATHS
         from os import urandom, remove, path
         from click.testing import CliRunner
 
@@ -215,26 +215,26 @@ class TestFileSubmitter:
             f.write("blah")
 
         mocker.patch("helper.get_client", return_value="blah")
-        mocker.patch("assemblyline_client_scripts.scripts.al_incident_submitter._test_ingest_file")
-        mocker.patch("assemblyline_client_scripts.scripts.al_incident_submitter._ingest_file")
+        mocker.patch("assemblyline_incident_manager.al_incident_submitter._test_ingest_file")
+        mocker.patch("assemblyline_incident_manager.al_incident_submitter._ingest_file")
 
         if case == "resume_from_file_path":
-            from assemblyline_client_scripts.scripts.al_incident_submitter import FILE_PATHS
+            from assemblyline_incident_manager.al_incident_submitter import FILE_PATHS
             with open(FILE_PATHS, "wb") as f:
                 f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
         elif case == "resume_from_file_path_with_skipped_file":
-            from assemblyline_client_scripts.scripts.al_incident_submitter import FILE_PATHS, SKIPPED_FILE_PATHS
+            from assemblyline_incident_manager.al_incident_submitter import FILE_PATHS, SKIPPED_FILE_PATHS
             with open(FILE_PATHS, "wb") as f:
                 f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
             with open(SKIPPED_FILE_PATHS, "wb") as f:
                 f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
         elif case == "invalid_size_small":
-            from assemblyline_client_scripts.scripts.al_incident_submitter import MIN_FILE_SIZE
+            from assemblyline_incident_manager.al_incident_submitter import MIN_FILE_SIZE
             file_contents = urandom(MIN_FILE_SIZE-1)
             with open(f"{TEST_DIR}/file_small.txt", "wb") as f:
                 f.write(file_contents)
         elif case == "invalid_size_big":
-            from assemblyline_client_scripts.scripts.al_incident_submitter import MAX_FILE_SIZE
+            from assemblyline_incident_manager.al_incident_submitter import MAX_FILE_SIZE
             file_contents = urandom(MAX_FILE_SIZE+1)
             with open(f"{TEST_DIR}/file_big.txt", "wb") as f:
                 f.write(file_contents)
@@ -265,13 +265,13 @@ class TestFileSubmitter:
         ((1, "TLP:W", ["blah1"], False, 1000), {"ttl": 1, "classification": "TLP:W", "services": {"selected": ["blah1"], "resubmit": []}, "priority": 1000}),
     ])
     def test_generate_settings(values, expected_result):
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _generate_settings
+        from assemblyline_incident_manager.al_incident_submitter import _generate_settings
         assert _generate_settings(*values) == expected_result
 
     @staticmethod
     def test_freshen_up(mocker):
         from os import urandom, path
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _freshen_up, FILE_PATHS, SKIPPED_FILE_PATHS, LOG_FILE
+        from assemblyline_incident_manager.al_incident_submitter import _freshen_up, FILE_PATHS, SKIPPED_FILE_PATHS, LOG_FILE
         file_contents = urandom(100)
         # Linux
         with open(FILE_PATHS, "wb") as f:
@@ -300,7 +300,7 @@ class TestFileSubmitter:
 
     @staticmethod
     def test_file_has_valid_size(mocker):
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _file_has_valid_size, MIN_FILE_SIZE, MAX_FILE_SIZE
+        from assemblyline_incident_manager.al_incident_submitter import _file_has_valid_size, MIN_FILE_SIZE, MAX_FILE_SIZE
 
         too_small_file_path = "/too/small"
         mocker.patch("os.path.getsize", return_value=MIN_FILE_SIZE-1)
@@ -316,20 +316,20 @@ class TestFileSubmitter:
 
     @staticmethod
     def test_test_ingest_file(dummy_al_client_class_instance):
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _test_ingest_file
+        from assemblyline_incident_manager.al_incident_submitter import _test_ingest_file
         _test_ingest_file(dummy_al_client_class_instance, {}, "blah", True)
         assert True
 
     @staticmethod
     def test_ingest_file(dummy_al_client_class_instance):
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _ingest_file
+        from assemblyline_incident_manager.al_incident_submitter import _ingest_file
         _ingest_file("blah", "blah", "blah", dummy_al_client_class_instance, {}, "blah", True)
         assert True
 
     @staticmethod
     def test_get_most_recent_file_path(mocker):
         from os import remove, path
-        from assemblyline_client_scripts.scripts.al_incident_submitter import _get_most_recent_file_path, FILE_PATHS
+        from assemblyline_incident_manager.al_incident_submitter import _get_most_recent_file_path, FILE_PATHS
         mocker.patch("al_incident_submitter.hash_table", return_value=[])
         if path.exists(FILE_PATHS):
             remove(FILE_PATHS)

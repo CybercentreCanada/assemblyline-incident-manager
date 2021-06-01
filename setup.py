@@ -41,9 +41,9 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'al-incident-submitter=assemblyline-incident-manager.scripts:al_incident_submitter.main',
-            'al-incident-analyzer=assemblyline-incident-manager.scripts:al_incident_analyzer.main',
-            'al-incident-downloader=assemblyline-incident-manager.scripts:al_incident_downloader.main',
+            'al-incident-submitter=assemblyline_incident_manager.al_incident_submitter:main',
+            'al-incident-analyzer=assemblyline_incident_manager.al_incident_analyzer:main',
+            'al-incident-downloader=assemblyline_incident_manager.al_incident_downloader:main',
         ],
     },
     install_requires=[
