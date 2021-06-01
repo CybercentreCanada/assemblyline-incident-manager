@@ -25,9 +25,12 @@ For the machine(s) running the "Pusher", the "Puller", and the "Downloader":
 - You will need at least Python 3
   - Download here: https://www.python.org/downloads/
 - If on Linux, you will need to install the following packages via APT/YUM: `libffi-dev`, `libssl-dev`
-  - By command line: (APT) `sudo apt-get install libffi-dev libssl-dev`, (YUM) `sudo yum install libffi-dev libssl-dev`
+  - By command line: 
+    - (APT) `sudo apt-get install libffi-dev libssl-dev`
+    - (YUM) `sudo yum install libffi-dev libssl-dev`
   - By browser, download .deb files here: https://packages.debian.org/jessie/libffi-dev, https://packages.debian.org/jessie/libssl-dev
 - You will need the `assemblyline-incident-manager` PIP module and its dependencies installed
+  - `pip install assemblyline-incident-manager`
 - For the offline installation of these packages and libraries, see the Offline Installation section
 
 In general:
@@ -44,15 +47,12 @@ that does not have Internet access.
 #### Linux:
 ```
 mkdir offline_packages
-cd offline_packages
 sudo su
 apt-get install --download-only python3 python3-pip libffi-dev libssl-dev --reinstall -y
-mv /var/cache/apt/archives/*.deb .
-python3 -m pip download pip pycryptodome requests requests[security] python-baseconv python-socketio[client] socketio-client==0.5.7.4 click
-python3 -m pip download assemblyline_client
-cd ..
+mv /var/cache/apt/archives/*.deb ~/offline_packages
+python3 -m pip download pip assemblyline-incident-manager -d ~/offline_packages
 exit
-tar -czvf offline_packages.tar.gz offline_packages/
+tar -czvf offline_packages.tar.gz ~/offline_packages/
 Copy this file over using SCP, FTP or some other method
 ```
 
@@ -66,7 +66,7 @@ for x in `ls *.whl`;  do python3 -m pip install $x; done
 
 #### Windows
 - Download and install the most recent Python .msi installer from https://www.python.org/downloads/release. 
-- Upgrade PIP: `pyhton -m pip install --upgrade pip`
+- Upgrade PIP: `python -m pip install --upgrade pip`
 - Install the required PIP packages: `python3 -m pip download assemblyline-incident-manager`
 
 ## Run the thing!
