@@ -1,5 +1,6 @@
 test_dir/*
 *.csv
 *.txt
+!test/requirements.txt
 *.log
 __pycache__
