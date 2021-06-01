@@ -43,7 +43,6 @@ stages:
               python.version: "3.9"
         timeoutInMinutes: 10
         steps:
-          - checkout: none
           - task: UsePythonVersion@0
             displayName: Set python version
             inputs:
@@ -60,6 +59,7 @@ stages:
               sudo apt-get install -y build-essential libffi-dev libfuzzy-dev python3-dev
               export VERSION=${BUILD_SOURCEBRANCH#"refs/tags/v"}
               sudo -E env "PATH=$PATH" python -m pip install --no-cache-dir -f $(Pipeline.Workspace)/dist/ "assemblyline-incident-manager[test]==${VERSION}"
+              sudo env "PATH=$PATH" python -m pip install -r test/requirements.txt
             displayName: Install assemblyline_incident_manager
           - script: pytest -rsx -vv
             workingDirectory: $(Pipeline.Workspace)/test
@@ -71,12 +71,11 @@ stages:
         variables:
           - group: deployment-information
         steps:
-          - download: current
-            artifact: dist
           - task: UsePythonVersion@0
             displayName: Set python version
-            inputs:
-              versionSpec: '3.8'
+            inputs: { versionSpec: 3.8 }
+          - download: current
+            artifact: dist
           - script: |
               set -xv  # Echo commands before they are run
               sudo env "PATH=$PATH" python -m pip install --no-cache-dir twine
