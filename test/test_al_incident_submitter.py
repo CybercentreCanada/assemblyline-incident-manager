@@ -20,7 +20,7 @@ def dummy_al_client_class_instance():
     return DummyALClient()
 
 
-class TestFileSubmitter:
+class TestALIncidentSubmitter:
     @classmethod
     def setup_class(cls):
         from os import path, mkdir, urandom
@@ -330,7 +330,7 @@ class TestFileSubmitter:
     def test_get_most_recent_file_path(mocker):
         from os import remove, path
         from assemblyline_incident_manager.al_incident_submitter import _get_most_recent_file_path, FILE_PATHS
-        mocker.patch("al_incident_submitter.hash_table", return_value=[])
+        mocker.patch("assemblyline_incident_manager.al_incident_submitter.hash_table", return_value=[])
         if path.exists(FILE_PATHS):
             remove(FILE_PATHS)
         assert _get_most_recent_file_path() == (False, None)

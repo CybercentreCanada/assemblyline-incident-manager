@@ -85,7 +85,7 @@ class TestHelper:
 
     @staticmethod
     def test_safe_str():
-        from helper import safe_str
+        from assemblyline_incident_manager.helper import safe_str
         assert safe_str("hello") == "hello"
         assert safe_str("hello\x00") == "hello\\x00"
         assert safe_str("\xf1\x90\x80\x80") == "\xf1\x90\x80\x80"

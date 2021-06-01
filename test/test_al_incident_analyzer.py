@@ -39,7 +39,7 @@ def dummy_al_client_instance():
     yield DummyALClient()
 
 
-class TestResultAnalyzer:
+class TestALIncidentAnalyzer:
     @staticmethod
     @pytest.mark.parametrize("case, command_line_options", [
         (
