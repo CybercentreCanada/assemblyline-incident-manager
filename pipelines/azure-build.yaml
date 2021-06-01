@@ -40,7 +40,6 @@ stages:
             Python3_9:
               python.version: "3.9"
         timeoutInMinutes: 10
-        services:
         steps:
           - checkout: none
           - task: UsePythonVersion@0
