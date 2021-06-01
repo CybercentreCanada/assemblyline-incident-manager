@@ -47,7 +47,7 @@ setup(
         ],
     },
     install_requires=[
-        'assembyline_client',
+        'assembyline-client',
         'click',
     ],
     extras_require={
