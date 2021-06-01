@@ -1,0 +1,5 @@
+test_dir/*
+*.csv
+*.txt
+*.log
+__pycache__
