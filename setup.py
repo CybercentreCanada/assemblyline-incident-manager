@@ -47,7 +47,7 @@ setup(
         ],
     },
     install_requires=[
-        'assembyline-client',
+        'assemblyline-client',
         'click',
     ],
     extras_require={
