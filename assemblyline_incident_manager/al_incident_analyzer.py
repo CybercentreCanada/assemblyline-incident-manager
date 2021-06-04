@@ -39,7 +39,7 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     """
     # Here is the query that we will be using to retrieve all submission details
     incident_num = prepare_query_value(incident_num)
-    query = f"metadata.incident_number:'{incident_num}' AND max_score:>={min_score}"
+    query = f"metadata.incident_number:\"{incident_num}\" AND max_score:>={min_score}"
     print_and_log(log, f"INFO,Query: {query}", logging.DEBUG)
 
     if is_test:
