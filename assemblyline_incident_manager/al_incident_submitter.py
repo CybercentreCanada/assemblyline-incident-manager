@@ -74,11 +74,11 @@ def get_id_from_data(file_path: str) -> str:
 @click.option("--classification", required=True, type=click.STRING,
               help="The classification level for each file submitted to Assemblyline.")
 @click.option("--service_selection", required=False, type=click.STRING,
-              help="A comma-separated list (no spaces!) of service names to send files to. If not provided, all services will be selected.")
+              help="A comma-separated list (no spaces!) of service names (case-sensitive) to send files to. If not provided, all services will be selected.")
 @click.option("-t", "--is_test", is_flag=True, help="A flag that indicates that you're running a test.")
 @click.option("--path", required=True, type=click.Path(exists=True, readable=True),
               help="The directory path containing files that you want to submit to Assemblyline.")
-@click.option("-f", "--fresh", is_flag=True, help="We do not care about previous runs and resuming those.")
+@click.option("-f", "--fresh", is_flag=True, help="Restart ingestion from the beginning.")
 @click.option("--incident_num", required=True, type=click.STRING,
               help="The incident number for each file to be associated with.")
 @click.option("--resubmit-dynamic", is_flag=True,
@@ -89,7 +89,7 @@ def get_id_from_data(file_path: str) -> str:
               help="Only submit files with unique hashes. If you want 100% file coverage in a given path, do not use this flag")
 @click.option("--priority", default=100, required=False, type=click.INT,
               help="Provide a priority number which will cause the ingestion to go to a specific priority queue.")
-@click.option("--do_not_verify_ssl", is_flag=True, help="Verify SSL when creating and using the Assemblyline Client.")
+@click.option("--do_not_verify_ssl", is_flag=True, help="Ignore SSL errors (insecure!)")
 def main(url: str, username: str, apikey: str, ttl: int, classification: str, service_selection: str, is_test: bool, path: str, fresh: bool, incident_num: str, resubmit_dynamic: bool, alert: bool, threads: int, dedup_hashes: bool, priority: int, do_not_verify_ssl: bool):
     """
     Example:
