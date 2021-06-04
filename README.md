@@ -80,7 +80,7 @@ Usage: al-incident-submitter [OPTIONS] COMMAND [ARGS]...
   instance>" --username="<user-name>"
   --apikey="/path/to/file/containing/apikey"
   --classification="<classification>" --service_selection="<service-
-  name>,<service-name>" --path="/path/to/compromised/directory"
+  name>,<service-name>" --path="/path/to/scan"
   --incident_num=123
 
 Options:
