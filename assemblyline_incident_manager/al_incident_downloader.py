@@ -54,12 +54,12 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     query = f"metadata.incident_number:\"{incident_num}\" AND max_score:>={min_score} AND metadata.filename:*{prepared_upload_path}*"
 
     if is_test:
-        print_and_log(log, f"ADMIN,The query that you will make is: {query}.,,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,The files you are querying were uploaded from: {upload_path}.,,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,The files you are querying are to be downloaded to: {download_path}.,,", logging.DEBUG)
+        print_and_log(log, f"INFO,The query that you will make is: {query}.", logging.DEBUG)
+        print_and_log(log, f"INFO,The files you are querying were uploaded from: {upload_path}.", logging.DEBUG)
+        print_and_log(log, f"INFO,The files you are querying are to be downloaded to: {download_path}.", logging.DEBUG)
         return
     else:
-        print_and_log(log, f"ADMIN,Query: {query}.,,", logging.DEBUG)
+        print_and_log(log, f"INFO,Query: {query}.", logging.DEBUG)
 
     # First check if the download path exists
     if not os.path.exists(download_path):
@@ -88,11 +88,11 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     submission_res = al_client.search.stream.submission(query, fl="sid")
     sids = []
 
-    print_and_log(log, f"ADMIN,Gathering the submission IDs.,,", logging.DEBUG)
+    print_and_log(log, f"INFO,Gathering the submission IDs.", logging.DEBUG)
     for submission in submission_res:
         sid = submission["sid"]
         sids.append(sid)
-    print_and_log(log, f"ADMIN,There are {len(sids)} submission IDs.,,", logging.DEBUG)
+    print_and_log(log, f"INFO,There are {len(sids)} submission IDs.", logging.DEBUG)
 
     total_already_downloaded = 0
     for root, dir, files in os.walk(download_path):
@@ -135,7 +135,7 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
             unique_file_hashes.add(file_hash)
 
             if upload_path not in submitted_filepath:
-                print_and_log(log, f"ADMIN,{upload_path} is not in {submitted_filepath} for SID {sid} even though it shares the provided incident number {incident_num}.,{submitted_filepath},{file_hash}", log_level=logging.DEBUG)
+                print_and_log(log, f"INFO,{upload_path} is not in {submitted_filepath} for SID {sid} even though it shares the provided incident number {incident_num}.,{submitted_filepath},{file_hash}", log_level=logging.DEBUG)
                 continue
             root_filepath = submitted_filepath.replace(upload_path, "")
             root_filepath = root_filepath.lstrip("\\")
@@ -145,13 +145,13 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
 
             if not overwrite_all and add_unique:
                 if os.path.exists(filepath_to_download):
-                    print_and_log(log, f"ADMIN,{filepath_to_download} has already been downloaded.,{submitted_filepath},{file_hash}", log_level=logging.DEBUG)
+                    print_and_log(log, f"INFO,{filepath_to_download} has already been downloaded.,{submitted_filepath},{file_hash}", log_level=logging.DEBUG)
                     continue
 
             file_queue.put((file_hash, filepath_to_download))
 
     while file_queue.qsize():
-        print_and_log(log, "ADMIN,Waiting for the queue to empty...,,", logging.DEBUG)
+        print_and_log(log, "INFO,Waiting for the queue to empty...", logging.DEBUG)
         sleep(1)
 
     for _ in range(num_of_downloaders):
@@ -161,13 +161,13 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     for worker in workers:
         worker.join()
 
-    print_and_log(log, f"ADMIN,Download complete!,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,{len(unique_file_paths)} unique file paths found in {total_submissions_that_match_query} submissions that match the query.,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,{len(unique_file_hashes)} files with unique contents found in {total_submissions_that_match_query} submissions that match the query.,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,{total_already_downloaded} files were downloaded to {download_path} in previous runs.,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,{total_downloaded} files downloaded to {download_path} in current run.,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Total elapsed time: {time() - start_time}.,,", logging.DEBUG)
-    print_and_log(log, "ADMIN,Thank you for using Assemblyline :),,", logging.DEBUG)
+    print_and_log(log, f"INFO,Download complete!", logging.DEBUG)
+    print_and_log(log, f"INFO,{len(unique_file_paths)} unique file paths found in {total_submissions_that_match_query} submissions that match the query.", logging.DEBUG)
+    print_and_log(log, f"INFO,{len(unique_file_hashes)} files with unique contents found in {total_submissions_that_match_query} submissions that match the query.", logging.DEBUG)
+    print_and_log(log, f"INFO,{total_already_downloaded} files were downloaded to {download_path} in previous runs.", logging.DEBUG)
+    print_and_log(log, f"INFO,{total_downloaded} files downloaded to {download_path} in current run.", logging.DEBUG)
+    print_and_log(log, f"INFO,Total elapsed time: {time() - start_time}.", logging.DEBUG)
+    print_and_log(log, "INFO,Thank you for using Assemblyline :)", logging.DEBUG)
 
 
 def _handle_overwrite(download_dir: str) -> (bool, bool):
@@ -181,12 +181,12 @@ def _handle_overwrite(download_dir: str) -> (bool, bool):
         if add_missing == "y":
             add_unique = True
         elif add_missing == "n":
-            print_and_log(log, f"ADMIN,The download directory {download_dir} already exists. You chose not to download additional files and to exit.,,",
+            print_and_log(log, f"INFO,The download directory {download_dir} already exists. You chose not to download additional files and to exit.",
                           logging.DEBUG)
         else:
-            print_and_log(log, "ADMIN,You submitted a value that was neither [y/n]. Exiting.,,", logging.DEBUG)
+            print_and_log(log, "INFO,You submitted a value that was neither [y/n]. Exiting.", logging.DEBUG)
     else:
-        print_and_log(log, "ADMIN,You submitted a value that was neither [y/n]. Exiting.,,", logging.DEBUG)
+        print_and_log(log, "INFO,You submitted a value that was neither [y/n]. Exiting.", logging.DEBUG)
     return overwrite_all, add_unique
 
 
@@ -201,7 +201,7 @@ def _thr_queue_reader(file_queue: Queue, al_client: Client4) -> None:
             file_contents = al_client.file.download(sha, encoding="raw")
             with open(download_path, "wb") as f:
                 f.write(file_contents)
-            print_and_log(log, f"ADMIN,Downloaded {download_path}.,{download_path},{sha}", logging.DEBUG)
+            print_and_log(log, f"INFO,Downloaded {download_path}.,{download_path},{sha}", logging.DEBUG)
             total_downloaded += 1
 
 

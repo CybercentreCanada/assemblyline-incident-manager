@@ -40,10 +40,10 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     # Here is the query that we will be using to retrieve all submission details
     incident_num = prepare_query_value(incident_num)
     query = f"metadata.incident_number:'{incident_num}' AND max_score:>={min_score}"
-    print_and_log(log, f"ADMIN,Query: {query},,", logging.DEBUG)
+    print_and_log(log, f"INFO,Query: {query}", logging.DEBUG)
 
     if is_test:
-        print_and_log(log, f"ADMIN,The query that you will make is: {query},,", logging.DEBUG)
+        print_and_log(log, f"INFO,The query that you will make is: {query}", logging.DEBUG)
         return
 
     # Overwrite the report file?
@@ -75,7 +75,7 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
 
         # Wait until the submission has completed
         while not al_client.submission.is_completed(sid):
-            print_and_log(log, f"ADMIN,{sid} is not completed yet. Sleeping for 5 seconds and trying again.,,", logging.DEBUG)
+            print_and_log(log, f"INFO,{sid} is not completed yet. Sleeping for 5 seconds and trying again.", logging.DEBUG)
             sleep(5)
 
         # Deep dive into the submission to get the files
@@ -88,9 +88,9 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
             report_file.write(msg)
             number_of_files_with_results += 1
 
-    msg = f"ADMIN,Results Query Complete\n" \
+    msg = f"INFO,Results Query Complete\n" \
           f"Number of files with results = {number_of_files_with_results}\n" \
-          f"Total time elapsed: {time() - start_time}s,,"
+          f"Total time elapsed: {time() - start_time}s"
     print_and_log(log, msg, logging.DEBUG)
 
 
@@ -100,11 +100,11 @@ def _handle_overwrite() -> bool:
         os.remove(REPORT_FILE)
         return True
     elif overwrite == "n":
-        print_and_log(log, f"ADMIN,A {REPORT_FILE} already exists. You chose not to overwrite the file and to exit.,,",
+        print_and_log(log, f"INFO,A {REPORT_FILE} already exists. You chose not to overwrite the file and to exit.",
                       logging.DEBUG)
         return False
     else:
-        print_and_log(log, "ADMIN,You submitted a value that was neither [y/n]. Exiting.,,", logging.DEBUG)
+        print_and_log(log, "INFO,You submitted a value that was neither [y/n]. Exiting.", logging.DEBUG)
         return False
 
 

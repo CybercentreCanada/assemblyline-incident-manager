@@ -139,12 +139,12 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
             f.write("")
 
     # Get the number of files in folder, so that we can provide
-    print_and_log(log, "ADMIN,Generating the number of files which we will be submitting...,,", logging.DEBUG)
+    print_and_log(log, "INFO,Generating the number of files which we will be submitting...", logging.DEBUG)
     for root, _, files in os.walk(path):
         l = len(files)
         if l:
             total_file_count += l
-    print_and_log(log, f"ADMIN,Number of files which we will be submitting: {total_file_count},,", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of files which we will be submitting: {total_file_count}", logging.DEBUG)
 
     if threads == 0:
         # From https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
@@ -187,19 +187,19 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
             # We only care about files that occur after the last sha in the hash file
             if resume_ingestion_path:
                 if prepared_file_path in skipped_file_paths:
-                    print_and_log(log, f"ADMIN,Found a skipped file path {prepared_file_path}. Trying to ingest again!,{prepared_file_path},",
+                    print_and_log(log, f"INFO,Found a skipped file path {prepared_file_path}. Trying to ingest again!,{prepared_file_path},",
                                   logging.DEBUG)
                     file_queue.put((file_path, prepared_file_path, settings, incident_num, alert, file_count, dedup_hashes, True))
                     continue
                 elif resume_ingestion_path == prepared_file_path:
-                    print_and_log(log, f"ADMIN,Found the most recently submitted file path {resume_ingestion_path},{prepared_file_path},",
+                    print_and_log(log, f"INFO,Found the most recently submitted file path {resume_ingestion_path},{prepared_file_path},",
                                   logging.DEBUG)
                     skip = False
 
             # If we have yet to come up to the file who matches the last submitted file path, continue looking!
             if skip:
                 print_and_log(log,
-                              f"ADMIN,Seeking the file that matches this file path: {resume_ingestion_path}. {prepared_file_path} has already been ingested.,{prepared_file_path},",
+                              f"INFO,Seeking the file that matches this file path: {resume_ingestion_path}. {prepared_file_path} has already been ingested.,{prepared_file_path},",
                               logging.DEBUG)
                 continue
             file_queue.put((file_path, prepared_file_path, settings, incident_num, alert, file_count, dedup_hashes, False))
@@ -214,13 +214,13 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
     for worker in workers:
         worker.join()
 
-    print_and_log(log, f"ADMIN,Ingestion Complete,,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Number of files ingested = {number_of_files_ingested},,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Number of duplicate files on system = {number_of_file_duplicates},,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Number of files skipped due to errors = {number_of_files_skipped},,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size},,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size},,", logging.DEBUG)
-    print_and_log(log, f"ADMIN,Total time elapsed: {round(time() - start_time, 3)}s,,", logging.DEBUG)
+    print_and_log(log, f"INFO,Ingestion Complete", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of files ingested = {number_of_files_ingested}", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of duplicate files on system = {number_of_file_duplicates}", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of files skipped due to errors = {number_of_files_skipped}", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}", logging.DEBUG)
+    print_and_log(log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}", logging.DEBUG)
+    print_and_log(log, f"INFO,Total time elapsed: {round(time() - start_time, 3)}s", logging.DEBUG)
 
 
 def _generate_settings(ttl: int, classification: str, service_selection: List[str], resubmit_dynamic: bool, priority: int) -> dict:
@@ -270,7 +270,7 @@ def _file_has_valid_size(file_path: str, prepared_file_path: str) -> (bool, int,
 
 
 def _test_ingest_file(al_client: Client4, settings: dict, incident_num: str, alert: bool):
-    print_and_log(log, f"ADMIN,The Assemblyline ingest settings you using are: {settings},,", logging.DEBUG)
+    print_and_log(log, f"INFO,The Assemblyline ingest settings you using are: {settings}", logging.DEBUG)
 
     # Create randomly generated buffer to test the submission parameters
     file_contents = os.urandom(100)
@@ -340,12 +340,12 @@ def _thr_ingest_file(
 
     # Print the counts every 100 files
     if file_count % 100 == 0:
-        print_and_log(log, f"ADMIN,Number of files ingested = {number_of_files_ingested},,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,Number of duplicate files on system = {number_of_file_duplicates},,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,Number of files skipped due to errors = {number_of_files_skipped},,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size},,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size},,", logging.DEBUG)
-        print_and_log(log, f"ADMIN,Progress = {round((file_count / total_file_count) * 100, 2)}%,,", logging.DEBUG)
+        print_and_log(log, f"INFO,Number of files ingested = {number_of_files_ingested}", logging.DEBUG)
+        print_and_log(log, f"INFO,Number of duplicate files on system = {number_of_file_duplicates}", logging.DEBUG)
+        print_and_log(log, f"INFO,Number of files skipped due to errors = {number_of_files_skipped}", logging.DEBUG)
+        print_and_log(log, f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}", logging.DEBUG)
+        print_and_log(log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}", logging.DEBUG)
+        print_and_log(log, f"INFO,Progress = {round((file_count / total_file_count) * 100, 2)}%", logging.DEBUG)
 
     sha = None
     # Wrap everything in a try-catch so we become invincible
