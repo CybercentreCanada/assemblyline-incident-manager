@@ -36,7 +36,7 @@ total_downloaded = 0
 @click.option("-u", "--username", required=True, type=click.STRING, help="Your Assemblyline account username.")
 @click.option("--apikey", required=True, type=click.Path(exists=True, readable=True),
               help="A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires read access.")
-@click.option("--min_score", required=True, default=1, type=click.INT, help="The minimum score for files that we want to query from Assemblyline.")
+@click.option("--max_score", required=True, default=1, type=click.INT, help="The maximum score for files that we want to download from Assemblyline.")
 @click.option("--incident_num", required=True, type=click.STRING, help="The incident number that each file is associated with.")
 @click.option("--download_path", required=True, type=click.Path(exists=False), help="The path to the folder that we will download files to.")
 @click.option("--upload_path", required=True, type=click.Path(exists=False), help="The base path from which the files were ingested from on the compromised system.")

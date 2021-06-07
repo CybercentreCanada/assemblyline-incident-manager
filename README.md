@@ -1,5 +1,5 @@
 # General Description
-This repository contains two Python scripts used for triaging compromised systems with Assemblyline.
+This repository contains three Python scripts used for triaging compromised systems with Assemblyline.
 1. The "Pusher" (`al-incident-submitter`): pushes files from the compromised system to an Assemblyline
 instance for analysis.
 2. The "Puller" (`al-incident-analyzer`): pulls the submissions from the
@@ -182,7 +182,7 @@ Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
   Example: al-incident-downloader --url="https://<domain-of-
   Assemblyline-instance>" --username="<user-name>"
   --apikey="/path/to/file/containing/apikey" --incident_num=123
-  --min_score=100 --download_path=/path/to/where/you/want/downloads
+  --max_score=100 --download_path=/path/to/where/you/want/downloads
   --upload_path=/path/from/where/files/were/uploaded/from
 
 Options:
@@ -196,8 +196,8 @@ Options:
                                 Assemblyline account API key. NOTE that this
                                 API key requires read access.  [required]
 
-  --min_score INTEGER           The minimum score for files that we want to
-                                query from Assemblyline.  [required]
+  --max_score INTEGER           The maximum score for files that we want to
+                                download from Assemblyline.  [required]
 
   --incident_num TEXT           The incident number that each file is
                                 associated with.  [required]
