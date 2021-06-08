@@ -13,10 +13,11 @@ This repository contains three Python scripts used for bulk triaging file using 
 
 # Installation
 ## Linux
-- following packages: `libffi-dev`, `libssl-dev`
+- Install the following packages: `libffi-dev`, `libssl-dev`
   - (APT) `sudo apt-get install libffi-dev libssl-dev python3`
   - (YUM) `sudo yum install libffi-dev libssl-dev python3`
-- `pip install assemblyline-incident-manager`
+- Upgrade PIP: `python3 -m pip install --upgrade pip`
+- `python3 -m pip install assemblyline-incident-manager`
 
 ## Windows
 - Download and install the most recent Python .msi installer from https://www.python.org/downloads/release. 
@@ -86,7 +87,7 @@ Options:
 
 ## Analyzer
 ```
-python al-incident-analyzer --help
+al-incident-analyzer --help
 Usage: al-incident-analyzer [OPTIONS] COMMAND [ARGS]...
 
   Example: al-incident-analyzer --url="https://<domain-of-
@@ -114,7 +115,7 @@ Now check the `report.csv` file that was created. This file will contain what fi
 
 ## Downloader
 ```
-python al-incident-downloader --help
+al-incident-downloader --help
 Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
 
   Example: al-incident-downloader --url="https://<domain-of-
@@ -178,9 +179,10 @@ Ce répertoire contient trois scripts Python pour assisté le triage de grande q
 
 # Installation
 ## Linux
-- packages suivants: `libffi-dev`, `libssl-dev`
+- Installez les packages suivants: `libffi-dev`, `libssl-dev`
     - (APT) `sudo apt-get install libffi-dev libssl-dev python3`
     - (YUM) `sudo yum install libffi-dev libssl-dev python3`
+- Mise à jour de PIP: `python -m pip install --upgrade pip`
 - `pip install assemblyline-incident-manager`
 
 ## Windows
@@ -251,7 +253,7 @@ Options:
 
 ## Analyzer
 ```
-python al-incident-analyzer --help
+al-incident-analyzer --help
 Usage: al-incident-analyzer [OPTIONS] COMMAND [ARGS]...
 
   Example: al-incident-analyzer --url="https://<domain-of-
@@ -279,7 +281,7 @@ Regardez le rapport dans `report.csv`. Ce fichier contient un rapport des détec
 
 ## Downloader
 ```
-python al-incident-downloader --help
+al-incident-downloader --help
 Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
 
   Example: al-incident-downloader --url="https://<domain-of-
