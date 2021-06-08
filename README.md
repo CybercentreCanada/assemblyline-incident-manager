@@ -182,8 +182,8 @@ Ce répertoire contient trois scripts Python pour assisté le triage de grande q
 - Installez les packages suivants: `libffi-dev`, `libssl-dev`
     - (APT) `sudo apt-get install libffi-dev libssl-dev python3`
     - (YUM) `sudo yum install libffi-dev libssl-dev python3`
-- Mise à jour de PIP: `python -m pip install --upgrade pip`
-- `pip install assemblyline-incident-manager`
+- Mise à jour de PIP: `python3 -m pip install --upgrade pip`
+- `python3 -m pip install assemblyline-incident-manager`
 
 ## Windows
 - Installé Python 3: https://www.python.org/downloads/release. 
