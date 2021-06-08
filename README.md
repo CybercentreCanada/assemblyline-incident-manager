@@ -179,7 +179,7 @@ Ce répertoire contient trois scripts Python pour assisté le triage de grande q
 
 # Installation
 ## Linux
-- Installez les packages suivants: `libffi-dev`, `libssl-dev`
+- Installé les packages suivants: `libffi-dev`, `libssl-dev`
     - (APT) `sudo apt-get install libffi-dev libssl-dev python3`
     - (YUM) `sudo yum install libffi-dev libssl-dev python3`
 - Mise à jour de PIP: `python3 -m pip install --upgrade pip`
