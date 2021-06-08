@@ -21,7 +21,7 @@ This repository contains three Python scripts used for bulk triaging file using 
 ## Windows
 - Download and install the most recent Python .msi installer from https://www.python.org/downloads/release. 
 - Upgrade PIP: `python -m pip install --upgrade pip`
-- `python3 -m pip install assemblyline-incident-manager`
+- `python -m pip install assemblyline-incident-manager`
 
 # Usage
 ## Submitter
@@ -186,7 +186,7 @@ Ce répertoire contient trois scripts Python pour assisté le triage de grande q
 ## Windows
 - Installé Python 3: https://www.python.org/downloads/release. 
 - Mise à jour de PIP: `python -m pip install --upgrade pip`
-- `python3 -m pip install assemblyline-incident-manager`
+- `python -m pip install assemblyline-incident-manager`
 
 # Utilisation
 ## Submitter
