@@ -43,7 +43,7 @@ total_downloaded = 0
 @click.option("-t", "--is_test", is_flag=True, help="A flag that indicates that you're running a test.")
 @click.option("--num_of_downloaders", default=1, type=click.INT, help="The number of threads that will be created to facilitate downloading the files.")
 @click.option("--do_not_verify_ssl", is_flag=True, help="Verify SSL when creating and using the Assemblyline Client.")
-def main(url: str, username: str, apikey: str, min_score: int, incident_num: str, download_path: str, upload_path, is_test: bool, num_of_downloaders: int, do_not_verify_ssl: bool):
+def main(url: str, username: str, apikey: str, max_score: int, incident_num: str, download_path: str, upload_path, is_test: bool, num_of_downloaders: int, do_not_verify_ssl: bool):
     """
     Example:
     al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 --min_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
@@ -51,7 +51,7 @@ def main(url: str, username: str, apikey: str, min_score: int, incident_num: str
     # Here is the query that we will be using to retrieve all submission details
     incident_num = prepare_query_value(incident_num)
     prepared_upload_path = prepare_query_value(upload_path)
-    query = f"metadata.incident_number:\"{incident_num}\" AND max_score:<={min_score} AND metadata.filename:\"*{prepared_upload_path}*\""
+    query = f"metadata.incident_number:\"{incident_num}\" AND max_score:<={max_score} AND metadata.filename:\"*{prepared_upload_path}*\""
 
     if is_test:
         print_and_log(log, f"INFO,The query that you will make is: {query}.", logging.DEBUG)

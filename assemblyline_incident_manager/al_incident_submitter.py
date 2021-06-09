@@ -109,6 +109,11 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
     # Setting the parameters
     settings = _generate_settings(ttl, classification, service_selection, resubmit_dynamic, priority)
 
+    # Confirm that given path is to a directory
+    if not os.path.isdir(path):
+        print_and_log(log, f"INFO,Provided path {path} points to a file, but it should point to a directory.", logging.DEBUG)
+        return
+
     if is_test:
         # Create the Assemblyline Client
         al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
