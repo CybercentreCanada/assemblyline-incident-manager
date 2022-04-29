@@ -42,19 +42,6 @@ class TestALIncidentSubmitter:
         rmdir(TEST_DIR)
 
     @staticmethod
-    @pytest.mark.parametrize("data, expected_result", [
-        (b"blah", '8b7df143d91c716ecfa5fc1730022f6b421b05cedee8fd52b1fc65a96030ad52')
-    ])
-    def test_get_id_from_data(data, expected_result):
-        from os import remove
-        from assemblyline_incident_manager.al_incident_submitter import get_id_from_data
-        SOME_FILE = "some_file.txt"
-        with open(SOME_FILE, "wb") as f:
-            f.write(b"blah")
-        assert get_id_from_data(SOME_FILE) == expected_result
-        remove(SOME_FILE)
-
-    @staticmethod
     @pytest.mark.parametrize("case, command_line_options", [
         (
                 "invalid_url", [
