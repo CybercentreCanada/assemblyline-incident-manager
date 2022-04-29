@@ -14,6 +14,7 @@ from time import sleep, time
 from threading import Thread
 from queue import Queue
 
+from assemblyline.common.digests import get_sha256_for_file
 from assemblyline_client import Client4
 from assemblyline_incident_manager.helper import init_logging, print_and_log, validate_parameters, prepare_apikey, safe_str, Client, prepare_query_value
 
@@ -45,22 +46,6 @@ number_of_file_duplicates = 0
 number_of_files_greater_than_max_size = 0
 number_of_files_less_than_min_size = 0
 total_file_count = 0
-
-
-def get_id_from_data(file_path: str) -> str:
-    """
-    This method generates a sha256 hash for the file contents of a file
-    @param file_path: The file path
-    @return _hash: The sha256 hash of the file
-    """
-    sha256_hash = sha256()
-    # stream it in so we don't load the whole file in memory
-    with open(file_path, 'rb') as f:
-        data = f.read(4096)
-        while data:
-            sha256_hash.update(data)
-            data = f.read(4096)
-    return sha256_hash.hexdigest()
 
 
 # These are click commands and options which allow the easy handling of command line arguments and flags
@@ -282,7 +267,7 @@ def _test_ingest_file(al_client: Client4, settings: dict, incident_num: str, ale
     with open(TEST_FILE, "wb") as f:
         f.write(file_contents)
 
-    sha = get_id_from_data(TEST_FILE)
+    sha = get_sha256_for_file(TEST_FILE)
 
     # Ingesting the test file
     print_and_log(log, f"INGEST,{TEST_FILE} ({sha}) is about to be ingested in test mode.,{TEST_FILE},{sha}", logging.DEBUG)
@@ -320,7 +305,7 @@ def _get_most_recent_file_path() -> (bool, str):
 
     # This adds the most recent hash that has been ingested to the hash table, so that
     # we do not re-ingest it during this run.
-    sha = get_id_from_data(file_path)
+    sha = get_sha256_for_file(file_path)
     hash_table.append(sha)
     return True, file_path
 
@@ -362,7 +347,7 @@ def _thr_ingest_file(
             return
 
         # Create a sha256 hash using the file contents.
-        sha = get_id_from_data(file_path)
+        sha = get_sha256_for_file(file_path)
 
         # If hash has already been submitted, then skip it
         if dedup_hashes and sha in hash_table:
