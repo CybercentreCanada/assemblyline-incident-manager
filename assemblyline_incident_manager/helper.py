@@ -14,7 +14,7 @@ URI_PATH = r"(?:[/?#]\S*)"
 FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
 
 DEFAULT_SERVICES = ["Static Analysis", "Extraction", "Networking", "Antivirus"]
-RESERVED_CHARACTERS = [".", "?", "+", "*", "|", "{", "}", "[", "]", "(", ")", '"', "\\", ":", "/"]
+RESERVED_CHARACTERS = [".", "?", "+", "*", "|", "{", "}", "[", "]", "(", ")", '"', "\\", ":", "/", " "]
 
 _VALID_UTF8 = compile(rb"""((?:
     [\x09\x0a\x20-\x7e]|             # 1-byte (ASCII excluding control chars).
@@ -48,7 +48,8 @@ class Client:
         self.al_client = None
         self._thr_refresh_client(log, url, username, apikey, do_not_verify_ssl)
 
-    def _thr_refresh_client(self, log: logging.Logger, url: str, username: str, apikey: str, do_not_verify_ssl: bool) -> None:
+    def _thr_refresh_client(
+            self, log: logging.Logger, url: str, username: str, apikey: str, do_not_verify_ssl: bool) -> None:
         print_and_log(log, "ADMIN,Refreshing the Assemblyline Client...,,", logging.DEBUG)
         self.al_client = get_client(url, apikey=(username, apikey), verify=not do_not_verify_ssl)
         thr = Timer(1800, self._thr_refresh_client, (log, url, username, apikey, do_not_verify_ssl))
@@ -77,7 +78,8 @@ def _validate_service_selection(log: logging.Logger, service_selection: str) -> 
     services_selected = service_selection.split(",")
     for service_selected in services_selected:
         if not service_selected:
-            print_and_log(log, f"ADMIN,Invalid service selected {service_selected} of {services_selected},,", logging.ERROR)
+            print_and_log(
+                log, f"ADMIN,Invalid service selected {service_selected} of {services_selected},,", logging.ERROR)
             return []
     return services_selected
 
@@ -141,5 +143,7 @@ def _escape(t, reversible=True):
 
 def prepare_query_value(query_value: str) -> str:
     if any(reserved_char in query_value for reserved_char in RESERVED_CHARACTERS):
-        query_value = query_value.translate(str.maketrans({reserved_char: f"\\{reserved_char}" for reserved_char in RESERVED_CHARACTERS}))
+        query_value = query_value.translate(str.maketrans(
+            {reserved_char: f"\\{reserved_char}"
+             for reserved_char in RESERVED_CHARACTERS}))
     return query_value
