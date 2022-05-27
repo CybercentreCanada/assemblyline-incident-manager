@@ -94,14 +94,14 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
     submission_res = al_client.search.stream.submission(query, fl="sid")
     sids = []
 
-    print_and_log(log, f"INFO,Gathering the submission IDs.", logging.DEBUG)
+    print_and_log(log, "INFO,Gathering the submission IDs.", logging.DEBUG)
     for submission in submission_res:
         sid = submission["sid"]
         sids.append(sid)
     print_and_log(log, f"INFO,There are {len(sids)} submission IDs.", logging.DEBUG)
 
     total_already_downloaded = 0
-    for root, dir, files in os.walk(download_path):
+    for _, _, files in os.walk(download_path):
         total_already_downloaded += len(files)
 
     entered = False
@@ -129,6 +129,12 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
         entered = True
         for sid in sids[:]:
             if not al_client.submission.is_completed(sid):
+                continue
+            # If the submission completes, but the score ends up being higher than the max score
+            # This any condition should only contain a single item single SIDs are unique
+            elif any(sub["max_score"] > max_score for sub in al_client.search.stream.submission(sid, fl="max_score")):
+                # Remove the SID since it does not meet the given criteria, and move on!
+                sids.remove(sid)
                 continue
             else:
                 sids.remove(sid)
