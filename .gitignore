@@ -4,3 +4,4 @@ test_dir/*
 !test/requirements.txt
 *.log
 __pycache__
+*.egg-info/*
