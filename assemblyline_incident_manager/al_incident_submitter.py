@@ -90,7 +90,10 @@ def get_id_from_data(file_path: str) -> str:
 @click.option("--priority", default=100, required=False, type=click.INT,
               help="Provide a priority number which will cause the ingestion to go to a specific priority queue.")
 @click.option("--do_not_verify_ssl", is_flag=True, help="Ignore SSL errors (insecure!)")
-def main(url: str, username: str, apikey: str, ttl: int, classification: str, service_selection: str, is_test: bool, path: str, fresh: bool, incident_num: str, resubmit_dynamic: bool, alert: bool, threads: int, dedup_hashes: bool, priority: int, do_not_verify_ssl: bool):
+def main(
+    url: str, username: str, apikey: str, ttl: int, classification: str, service_selection: str, is_test: bool,
+    path: str, fresh: bool, incident_num: str, resubmit_dynamic: bool, alert: bool, threads: int,
+        dedup_hashes: bool, priority: int, do_not_verify_ssl: bool):
     """
     Example:
     al-incident_submitter --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/scan" --incident_num=123
@@ -111,7 +114,8 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
 
     # Confirm that given path is to a directory
     if not os.path.isdir(path):
-        print_and_log(log, f"INFO,Provided path {path} points to a file, but it should point to a directory.", logging.DEBUG)
+        print_and_log(
+            log, f"INFO,Provided path {path} points to a file, but it should point to a directory.", logging.DEBUG)
         return
 
     if is_test:
@@ -192,22 +196,29 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
             # We only care about files that occur after the last sha in the hash file
             if resume_ingestion_path:
                 if prepared_file_path in skipped_file_paths:
-                    print_and_log(log, f"INFO,Found a skipped file path {prepared_file_path}. Trying to ingest again!,{prepared_file_path},",
-                                  logging.DEBUG)
-                    file_queue.put((file_path, prepared_file_path, settings, incident_num, alert, file_count, dedup_hashes, True))
+                    print_and_log(
+                        log,
+                        f"INFO,Found a skipped file path {prepared_file_path}. Trying to ingest again!,{prepared_file_path},",
+                        logging.DEBUG)
+                    file_queue.put((file_path, prepared_file_path, settings,
+                                   incident_num, alert, file_count, dedup_hashes, True))
                     continue
                 elif resume_ingestion_path == prepared_file_path:
-                    print_and_log(log, f"INFO,Found the most recently submitted file path {resume_ingestion_path},{prepared_file_path},",
-                                  logging.DEBUG)
+                    print_and_log(
+                        log,
+                        f"INFO,Found the most recently submitted file path {resume_ingestion_path},{prepared_file_path},",
+                        logging.DEBUG)
                     skip = False
 
             # If we have yet to come up to the file who matches the last submitted file path, continue looking!
             if skip:
-                print_and_log(log,
-                              f"INFO,Seeking the file that matches this file path: {resume_ingestion_path}. {prepared_file_path} has already been ingested.,{prepared_file_path},",
-                              logging.DEBUG)
+                print_and_log(
+                    log,
+                    f"INFO,Seeking the file that matches this file path: {resume_ingestion_path}. {prepared_file_path} has already been ingested.,{prepared_file_path},",
+                    logging.DEBUG)
                 continue
-            file_queue.put((file_path, prepared_file_path, settings, incident_num, alert, file_count, dedup_hashes, False))
+            file_queue.put((file_path, prepared_file_path, settings,
+                           incident_num, alert, file_count, dedup_hashes, False))
 
     while file_queue.qsize():
         sleep(1)
@@ -223,12 +234,18 @@ def main(url: str, username: str, apikey: str, ttl: int, classification: str, se
     print_and_log(log, f"INFO,Number of files ingested = {number_of_files_ingested}", logging.DEBUG)
     print_and_log(log, f"INFO,Number of duplicate files on system = {number_of_file_duplicates}", logging.DEBUG)
     print_and_log(log, f"INFO,Number of files skipped due to errors = {number_of_files_skipped}", logging.DEBUG)
-    print_and_log(log, f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}", logging.DEBUG)
-    print_and_log(log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}", logging.DEBUG)
+    print_and_log(
+        log, f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}",
+        logging.DEBUG)
+    print_and_log(
+        log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}",
+        logging.DEBUG)
     print_and_log(log, f"INFO,Total time elapsed: {round(time() - start_time, 3)}s", logging.DEBUG)
 
 
-def _generate_settings(ttl: int, classification: str, service_selection: List[str], resubmit_dynamic: bool, priority: int) -> dict:
+def _generate_settings(
+        ttl: int, classification: str, service_selection: List[str],
+        resubmit_dynamic: bool, priority: int) -> dict:
     settings = {
         "ttl": ttl,
         "classification": classification,
@@ -263,11 +280,17 @@ def _file_has_valid_size(file_path: str, prepared_file_path: str) -> (bool, int,
     max_count = 0
     min_count = 0
     if file_size > MAX_FILE_SIZE:
-        print_and_log(log, f"TOO_LARGE,{prepared_file_path} is too big. Size: {file_size} > {MAX_FILE_SIZE}.,{prepared_file_path},", logging.DEBUG)
+        print_and_log(
+            log,
+            f"TOO_LARGE,{prepared_file_path} is too big. Size: {file_size} > {MAX_FILE_SIZE}.,{prepared_file_path},",
+            logging.DEBUG)
         max_count += 1
         return False, max_count, min_count
     elif file_size < MIN_FILE_SIZE:
-        print_and_log(log, f"TOO_SMALL,{prepared_file_path} is too small. Size: {file_size} < {MIN_FILE_SIZE}.,{prepared_file_path},", logging.DEBUG)
+        print_and_log(
+            log,
+            f"TOO_SMALL,{prepared_file_path} is too small. Size: {file_size} < {MIN_FILE_SIZE}.,{prepared_file_path},",
+            logging.DEBUG)
         min_count += 1
         return False, max_count, min_count
     else:
@@ -285,17 +308,24 @@ def _test_ingest_file(al_client: Client4, settings: dict, incident_num: str, ale
     sha = get_id_from_data(TEST_FILE)
 
     # Ingesting the test file
-    print_and_log(log, f"INGEST,{TEST_FILE} ({sha}) is about to be ingested in test mode.,{TEST_FILE},{sha}", logging.DEBUG)
-    al_client.ingest(path=TEST_FILE, fname=TEST_FILE, params=settings, alert=alert, metadata={"filename": TEST_FILE, "incident_number": incident_num})
+    print_and_log(
+        log, f"INGEST,{TEST_FILE} ({sha}) is about to be ingested in test mode.,{TEST_FILE},{sha}", logging.DEBUG)
+    al_client.ingest(path=TEST_FILE, fname=TEST_FILE, params=settings, alert=alert,
+                     metadata={"filename": TEST_FILE, "incident_number": incident_num})
     print_and_log(log, f"INGEST,{TEST_FILE} ({sha}) has been ingested in test mode.,{TEST_FILE},{sha}", logging.DEBUG)
 
     os.remove(TEST_FILE)
 
 
-def _ingest_file(file_path: str, prepared_file_path: str, sha: str, al_client: Client4, settings: dict, incident_num: str, alert: bool):
-    print_and_log(log, f"INGEST,{prepared_file_path} ({sha}) is about to be ingested.,{prepared_file_path},{sha}", logging.DEBUG)
-    al_client.ingest(path=file_path, fname=sha, params=settings, alert=alert, metadata={"filename": file_path, "incident_number": incident_num})
-    print_and_log(log, f"INGEST,{prepared_file_path} ({sha}) has been ingested.,{prepared_file_path},{sha}", logging.DEBUG)
+def _ingest_file(
+        file_path: str, prepared_file_path: str, sha: str, al_client: Client4, settings: dict, incident_num: str,
+        alert: bool):
+    print_and_log(
+        log, f"INGEST,{prepared_file_path} ({sha}) is about to be ingested.,{prepared_file_path},{sha}", logging.DEBUG)
+    al_client.ingest(path=file_path, fname=sha, params=settings, alert=alert,
+                     metadata={"filename": file_path, "incident_number": incident_num})
+    print_and_log(
+        log, f"INGEST,{prepared_file_path} ({sha}) has been ingested.,{prepared_file_path},{sha}", logging.DEBUG)
 
 
 def _get_most_recent_file_path() -> (bool, str):
@@ -348,8 +378,13 @@ def _thr_ingest_file(
         print_and_log(log, f"INFO,Number of files ingested = {number_of_files_ingested}", logging.DEBUG)
         print_and_log(log, f"INFO,Number of duplicate files on system = {number_of_file_duplicates}", logging.DEBUG)
         print_and_log(log, f"INFO,Number of files skipped due to errors = {number_of_files_skipped}", logging.DEBUG)
-        print_and_log(log, f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}", logging.DEBUG)
-        print_and_log(log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}", logging.DEBUG)
+        print_and_log(
+            log,
+            f"INFO,Number of files with size greater than {MAX_FILE_SIZE}B = {number_of_files_greater_than_max_size}",
+            logging.DEBUG)
+        print_and_log(
+            log, f"INFO,Number of files with size less than {MIN_FILE_SIZE}B = {number_of_files_less_than_min_size}",
+            logging.DEBUG)
         print_and_log(log, f"INFO,Progress = {round((file_count / total_file_count) * 100, 2)}%", logging.DEBUG)
 
     sha = None
@@ -366,7 +401,10 @@ def _thr_ingest_file(
 
         # If hash has already been submitted, then skip it
         if dedup_hashes and sha in hash_table:
-            print_and_log(log, f"DUPLICATE,{prepared_file_path} ({sha}) is a duplicate file. Skipping!,{prepared_file_path},{sha}", logging.DEBUG)
+            print_and_log(
+                log,
+                f"DUPLICATE,{prepared_file_path} ({sha}) is a duplicate file. Skipping!,{prepared_file_path},{sha}",
+                logging.DEBUG)
             number_of_file_duplicates += 1
             return
 
@@ -380,7 +418,8 @@ def _thr_ingest_file(
             FILE_PATHS_WRITER.write(f"{prepared_file_path}\n")
 
     except Exception as e:
-        print_and_log(log, f"SKIP,{prepared_file_path} was skipped due to {e}.,{prepared_file_path},{sha}", logging.ERROR)
+        print_and_log(
+            log, f"SKIP,{prepared_file_path} was skipped due to {e}.,{prepared_file_path},{sha}", logging.ERROR)
         number_of_files_skipped += 1
         SKIPPED_FILE_PATHS_WRITER.write(f"{prepared_file_path}\n")
 
@@ -392,7 +431,8 @@ def _thr_queue_reader(queue: Queue, al_client: Client4) -> None:
             return
         else:
             file_path, prepared_file_path, settings, incident_num, alert, file_count, dedup_hashes, was_skipped = msg
-            _thr_ingest_file(file_path, prepared_file_path, al_client, settings, incident_num, alert, file_count, dedup_hashes, was_skipped)
+            _thr_ingest_file(file_path, prepared_file_path, al_client, settings,
+                             incident_num, alert, file_count, dedup_hashes, was_skipped)
 
 
 if __name__ == "__main__":

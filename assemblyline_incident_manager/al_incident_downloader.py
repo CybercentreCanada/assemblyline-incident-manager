@@ -125,14 +125,17 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
     unique_file_paths = set()
     unique_file_hashes = set()
     start_time = time()
+    # "entered" is used so that we always enter this while loop regardless of completion status of sids
     while not entered or not all(al_client.submission.is_completed(sid) for sid in sids):
         entered = True
         for sid in sids[:]:
-            if not al_client.submission.is_completed(sid):
+            # Loop until the submission is completed
+            while not al_client.submission.is_completed(sid):
+                sleep(2)
                 continue
             # If the submission completes, but the score ends up being higher than the max score
             # This any condition should only contain a single item single SIDs are unique
-            elif any(sub["max_score"] > max_score for sub in al_client.search.stream.submission(sid, fl="max_score")):
+            if any(sub["max_score"] > max_score for sub in al_client.search.stream.submission(sid, fl="max_score")):
                 # Remove the SID since it does not meet the given criteria, and move on!
                 sids.remove(sid)
                 continue
