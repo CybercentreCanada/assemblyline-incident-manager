@@ -110,10 +110,10 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
 
     for _ in range(num_of_downloaders):
         # Creating a thread containing a unique AL client
-        al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
+        worker_al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
 
         worker = Thread(target=_thr_queue_reader,
-                        args=(file_queue, al_client),
+                        args=(file_queue, worker_al_client),
                         daemon=True)
         workers.append(worker)
 
