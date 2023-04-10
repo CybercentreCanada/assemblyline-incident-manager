@@ -1,0 +1,32 @@
+[assemblyline]
+url = "https://assemblyline.cccs.example.com"
+username = "incident_manager"
+# For submissions from a system, use an API key with WRITE access
+# For reading submissions, use an API key with READ access
+apikey = "~/.incident_write_key"  # Path to API Key
+
+[al_incident]
+incident_num = "al_123"
+# is_test = True
+
+# Submitter Parameters
+path = "/path/to/scan"
+classification = "TLP:AMBER"
+# Optional Parameters
+# ttl = 30  # Default 30
+# service_selection = []  # Default Service Selection is used if not used
+# resubmit-dynamic = true
+# fresh = true  # Clear list of already submitted files
+# alert = true
+# threads = 0
+# dedup_hashes = true
+# priority = 100
+# verify_ssl = false
+
+# Analyzer Parameters (Optional)
+min_score = 0
+
+# Downloader Parameters
+max_score = 1
+download_path = "/path/to/where/you/want/downloads"
+upload_path = "/path/from/where/files/were/uploaded/from"
