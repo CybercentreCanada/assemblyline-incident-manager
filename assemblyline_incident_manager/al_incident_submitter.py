@@ -80,11 +80,10 @@ def get_id_from_data(file_path: str) -> str:
     "-c",
     "--config",
     type=click.Path(dir_okay=False),
-    default=DEFAULT_CFG,
     callback=get_config,
     is_eager=True,
     expose_value=False,
-    help="Read option defaults from the specified TOML file",
+    help=f"Read options from the specified TOML file (default {DEFAULT_CFG})",
     show_default=True,
 )
 @click.option(

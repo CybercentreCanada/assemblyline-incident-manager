@@ -51,7 +51,7 @@ _VALID_UTF8 = compile(
     VERBOSE,
 )
 
-DEFAULT_CFG = "~/al_incident_config.toml"
+DEFAULT_CFG = "~/al_config.toml"
 
 
 def init_logging(log_file) -> logging.Logger:
@@ -220,11 +220,20 @@ def get_config(ctx, _, filename):
     except ImportError:
         from toml import loads as toml_loads
 
-    file_path = Path(filename).expanduser().resolve()
-    if not file_path.exists():
-        return
+    default_config = False
+    if filename is None:
+        default_config = True
+        filename = DEFAULT_CFG
 
-    cfg_dict = toml_loads(file_path.read_text())
+    file_path = Path(filename).expanduser().resolve()
+
+    try:
+        cfg_dict = toml_loads(file_path.read_text())
+    except FileNotFoundError:
+        if default_config:
+            return
+        raise
+
     ctx.default_map = {}
     ctx.default_map.update(cfg_dict.get("assemblyline", {}))
     ctx.default_map.update(cfg_dict.get("al_incident", {}))

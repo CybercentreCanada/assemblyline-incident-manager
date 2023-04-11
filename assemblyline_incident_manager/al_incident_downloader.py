@@ -45,11 +45,10 @@ total_downloaded = 0
     "-c",
     "--config",
     type=click.Path(dir_okay=False),
-    default=DEFAULT_CFG,
     callback=get_config,
     is_eager=True,
     expose_value=False,
-    help="Read option defaults from the specified TOML file",
+    help=f"Read options from the specified TOML file (default {DEFAULT_CFG})",
     show_default=True,
 )
 @click.option(
