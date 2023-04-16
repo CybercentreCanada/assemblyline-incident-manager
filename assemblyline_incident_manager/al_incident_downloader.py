@@ -26,7 +26,7 @@ from assemblyline_incident_manager.helper import (
     prepare_apikey,
     prepare_query_value,
     Client,
-    DEFAULT_CFG,
+    DEFAULT_TOML,
     get_config,
 )
 
@@ -48,7 +48,7 @@ total_downloaded = 0
     callback=get_config,
     is_eager=True,
     expose_value=False,
-    help=f"Read options from the specified TOML file (default {DEFAULT_CFG})",
+    help=f"Read options from the specified TOML file (default {DEFAULT_TOML})",
     show_default=True,
 )
 @click.option(

@@ -74,12 +74,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -95,12 +94,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -117,12 +115,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -139,12 +136,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -161,12 +157,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -183,12 +178,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -204,12 +198,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -225,12 +218,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -246,12 +238,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -267,12 +258,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -288,12 +278,11 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
@@ -309,17 +298,16 @@ class TestALIncidentSubmitter:
                     "--apikey",
                     API_KEY_FILE,
                     "--ttl",
-                    1,
+                    "1",
                     "--classification",
                     "blah",
                     "--service_selection",
                     "blah,blah",
-                    "--path",
                     TEST_DIR,
                     "--incident_num",
                     "blah",
                     "--threads",
-                    0,
+                    "0",
                 ],
             ),
         ],
@@ -331,7 +319,6 @@ class TestALIncidentSubmitter:
             SKIPPED_FILE_PATHS,
         )
         from os import urandom, remove, path
-        from click.testing import CliRunner
 
         with open(API_KEY_FILE, "w") as f:
             f.write("blah")
@@ -348,7 +335,7 @@ class TestALIncidentSubmitter:
             from assemblyline_incident_manager.al_incident_submitter import FILE_PATHS
 
             with open(FILE_PATHS, "wb") as f:
-                f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
+                f.write(f"{TEST_DIR}/delete_me_file_500.txt\n".encode())
         elif case == "resume_from_file_path_with_skipped_file":
             from assemblyline_incident_manager.al_incident_submitter import (
                 FILE_PATHS,
@@ -356,9 +343,9 @@ class TestALIncidentSubmitter:
             )
 
             with open(FILE_PATHS, "wb") as f:
-                f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
+                f.write(f"{TEST_DIR}/delete_me_file_500.txt\n".encode())
             with open(SKIPPED_FILE_PATHS, "wb") as f:
-                f.write((f"{TEST_DIR}/delete_me_file_500.txt\n").encode())
+                f.write(f"{TEST_DIR}/delete_me_file_500.txt\n".encode())
         elif case == "invalid_size_small":
             from assemblyline_incident_manager.al_incident_submitter import (
                 MIN_FILE_SIZE,
@@ -380,10 +367,9 @@ class TestALIncidentSubmitter:
 
             copyfile(f"{TEST_DIR}/delete_me_file_500.txt", f"{TEST_DIR}/file_copy.txt")
 
-        # Then setup the test
-        runner = CliRunner()
-        result = runner.invoke(main, command_line_options)
-        assert result.exit_code == 0
+        # Then set up the test
+        result = main(command_line_options)
+        assert result is None
 
         if case == "invalid_size_small":
             remove(f"{TEST_DIR}/file_small.txt")

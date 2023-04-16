@@ -2,6 +2,7 @@
 This file contains the code that does the "pushing". It submits all of the files that the  user
 wants to have submitted to Assemblyline for analysis.
 """
+import itertools
 from pathlib import Path
 
 # The imports to make this thing work. All packages are default Python libraries except for the
@@ -24,8 +25,8 @@ from assemblyline_incident_manager.helper import (
     safe_str,
     Client,
     prepare_query_value,
-    get_config,
-    DEFAULT_CFG,
+    parse_args,
+    get_al_client,
 )
 
 # These are the names of the files which we will use for writing and reading information to
@@ -74,118 +75,7 @@ def get_id_from_data(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 
-# These are click commands and options which allow the easy handling of command line arguments and flags
-@click.group(invoke_without_command=True)
-@click.option(
-    "-c",
-    "--config",
-    type=click.Path(dir_okay=False),
-    callback=get_config,
-    is_eager=True,
-    expose_value=False,
-    help=f"Read options from the specified TOML file (default {DEFAULT_CFG})",
-    show_default=True,
-)
-@click.option(
-    "--url",
-    required=True,
-    type=click.STRING,
-    help="The target URL that hosts Assemblyline.",
-)
-@click.option(
-    "--username",
-    required=True,
-    type=click.STRING,
-    help="Your Assemblyline account username.",
-)
-@click.option(
-    "--apikey",
-    required=True,
-    type=click.STRING,
-    help="A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.",
-)
-@click.option(
-    "--ttl",
-    type=click.INT,
-    default=30,
-    help="The amount of time that you want your Assemblyline submissions to live on the Assemblyline system (in days).",
-)
-@click.option(
-    "--classification",
-    required=True,
-    type=click.STRING,
-    help="The classification level for each file submitted to Assemblyline.",
-)
-@click.option(
-    "--service_selection",
-    required=False,
-    type=click.STRING,
-    help="A comma-separated list (no spaces!) of service names (case-sensitive) to send files to. If not provided, all services will be selected.",
-)
-@click.option(
-    "-t",
-    "--is_test",
-    is_flag=True,
-    help="A flag that indicates that you're running a test.",
-)
-@click.option(
-    "--path",
-    required=True,
-    type=click.Path(exists=True, readable=True),
-    help="The directory path containing files that you want to submit to Assemblyline.",
-)
-@click.option(
-    "-f", "--fresh", is_flag=True, help="Restart ingestion from the beginning."
-)
-@click.option(
-    "--incident_num",
-    required=True,
-    type=click.STRING,
-    help="The incident number for each file to be associated with.",
-)
-@click.option(
-    "--resubmit-dynamic",
-    is_flag=True,
-    help="All files that score higher than 500 will be resubmitted for dynamic analysis.",
-)
-@click.option("--alert", is_flag=True, help="Generate alerts for this submission.")
-@click.option(
-    "--threads",
-    default=0,
-    type=click.INT,
-    help="Number of threads that will ingest files to Assemblyline.",
-)
-@click.option(
-    "--dedup_hashes",
-    is_flag=True,
-    help="Only submit files with unique hashes. If you want 100% file coverage in a given path, do not use this flag",
-)
-@click.option(
-    "--priority",
-    default=100,
-    required=False,
-    type=click.INT,
-    help="Provide a priority number which will cause the ingestion to go to a specific priority queue.",
-)
-@click.option("--do_not_verify_ssl", is_flag=True, help="Ignore SSL errors (insecure!)")
-def main(
-    url: str,
-    username: str,
-    apikey: str,
-    ttl: int,
-    classification: str,
-    service_selection: str,
-    is_test: bool,
-    path: str,
-    fresh: bool,
-    incident_num: str,
-    resubmit_dynamic: bool,
-    alert: bool,
-    threads: int,
-    dedup_hashes: bool,
-    priority: int,
-    do_not_verify_ssl: bool,
-):
+def main(args=None):
     """
     Example 1:
     al-incident-submitter --url="https://<domain-of-Assemblyline-instance>" \
@@ -197,27 +87,48 @@ def main(
     global hash_table
     global total_file_count
 
-    apikey_val = prepare_apikey(apikey)
+    arg_dict = parse_args(args, al_incident="Submitter")
+
+    auth = arg_dict.get("auth", {})
+    server = arg_dict.get("server", {})
+    incident = arg_dict.get("incident", {})
+
+    server_crt_or_verify = server.get("cert") or not auth.get("insecure")
 
     # Parameter validation
-    incident_num = prepare_query_value(incident_num)
-    service_selection = validate_parameters(log, url, service_selection)
+    incident["incident_num"] = prepare_query_value(incident.get("incident_num"))
+    service_selection = validate_parameters(
+        log, server.get("url"), incident.get("service_selection")
+    )
     if not service_selection:
         return
 
     # Setting the parameters
     settings = _generate_settings(
-        ttl, classification, service_selection, resubmit_dynamic, priority
+        incident.get("ttl"),
+        incident.get("classification"),
+        service_selection,
+        incident.get("resubmit_dynamic"),
+        incident.get("priority"),
     )
 
     # Confirm that given path is to a directory
-    if is_test:
+    if incident.get("is_test"):
         # Create the Assemblyline Client
-        al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
-        _test_ingest_file(al_client, settings, incident_num, alert)
+        al_client = get_al_client(
+            server.get("url"),
+            auth.get("user"),
+            auth.get("apikey"),
+            auth.get("password"),
+            auth.get("cert"),
+            server_crt_or_verify,
+        )
+        _test_ingest_file(
+            al_client, settings, incident.get("incident_num"), incident.get("alert")
+        )
         return
 
-    if fresh:
+    if incident.get("fresh"):
         _freshen_up()
 
     file_count = 0
@@ -247,22 +158,10 @@ def main(
         logging.DEBUG,
     )
 
-    path = Path(path)
-    if not path.is_dir():
-        print_and_log(
-            log,
-            f"INFO,Provided path {path} points to a file, but it should point to a directory.",
-            logging.DEBUG,
-        )
-        # return
+    path_list = incident["path"]
+    total_file_count = len([f for f in paths_to_chain(path_list) if f.is_file()])
 
-    if path.is_file():
-        path_rglob = (p for p in [Path(path)])
-        threads = 1
-        total_file_count = 1
-    else:
-        path_rglob = path.rglob("*")
-        total_file_count = len([f for f in path.rglob("*") if f.is_file()])
+    path_chain = paths_to_chain(path_list)
 
     print_and_log(
         log,
@@ -270,11 +169,11 @@ def main(
         logging.DEBUG,
     )
 
-    if threads == 0:
+    if incident.get("threads", 0) == 0:
         # From https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
         max_workers = min(32, os.cpu_count() + 4)
     else:
-        max_workers = threads
+        max_workers = incident.get("threads")
 
     if max_workers > total_file_count:
         max_workers = total_file_count
@@ -284,7 +183,14 @@ def main(
 
     for _ in range(max_workers):
         # Creating a thread containing a unique AL client
-        al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
+        al_client = get_al_client(
+            server.get("url"),
+            auth.get("user"),
+            auth.get("apikey"),
+            auth.get("password"),
+            auth.get("cert"),
+            server_crt_or_verify,
+        )
 
         worker = Thread(
             target=_thr_queue_reader, args=(file_queue, al_client), daemon=True
@@ -297,7 +203,7 @@ def main(
 
     start_time = time()
     # Recursively go through every file in the provided folder and its sub-folders.
-    for file_path in path_rglob:
+    for file_path in path_chain:
         prepared_file_path = safe_str(file_path)
         # This happens in Windows when the file path is too long https://stackoverflow.com/questions/1365797/python-long-filename-support-broken-in-windows
         if not file_path.exists():
@@ -319,10 +225,10 @@ def main(
                         file_path,
                         prepared_file_path,
                         settings,
-                        incident_num,
-                        alert,
+                        incident["incident_num"],
+                        incident["alert"],
                         file_count,
-                        dedup_hashes,
+                        incident["dedup_hashes"],
                         True,
                     )
                 )
@@ -348,10 +254,10 @@ def main(
                 file_path,
                 prepared_file_path,
                 settings,
-                incident_num,
-                alert,
+                incident["incident_num"],
+                incident["alert"],
                 file_count,
-                dedup_hashes,
+                incident["dedup_hashes"],
                 False,
             )
         )
@@ -395,6 +301,17 @@ def main(
     print_and_log(
         log, f"INFO,Total time elapsed: {round(time() - start_time, 3)}s", logging.DEBUG
     )
+
+
+def paths_to_chain(path_list):
+    """
+    Convert list of strings to generator of Path objects.
+    """
+    path_list = [Path(p) for p in path_list]
+    path_chain = itertools.chain.from_iterable(
+        p.rglob("*") if p.is_dir() else [p] for p in path_list
+    )
+    return path_chain
 
 
 def _generate_settings(

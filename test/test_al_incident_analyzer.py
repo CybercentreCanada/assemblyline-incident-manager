@@ -110,17 +110,21 @@ class TestALIncidentAnalyzer:
         ],
     )
     def test_main(case, command_line_options, dummy_al_client_instance, mocker):
-        from click.testing import CliRunner
         from os import urandom, remove
         from assemblyline_incident_manager.al_incident_analyzer import main, REPORT_FILE
 
         mocker.patch(
-            "assemblyline_incident_manager.al_incident_analyzer.get_client",
+            "assemblyline_incident_manager.helper.get_client",
             return_value=dummy_al_client_instance,
         )
 
         with open(API_KEY_FILE, "w") as f:
             f.write("blah")
+
+        try:
+            remove(REPORT_FILE)
+        except Exception:
+            pass
 
         if case == "report_exists":
             file_contents = urandom(100)
@@ -128,10 +132,9 @@ class TestALIncidentAnalyzer:
                 f.write(file_contents)
             mocker.patch("builtins.input", return_value="n")
 
-        # Then setup the test
-        runner = CliRunner()
-        result = runner.invoke(main, command_line_options)
-        assert result.exit_code == 0
+        # Then set up the test
+        result = main(command_line_options)
+        assert result is None
 
         if case == "report_exists":
             remove(REPORT_FILE)

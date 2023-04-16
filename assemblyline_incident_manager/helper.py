@@ -1,8 +1,15 @@
 import logging
+from copy import copy
 from pathlib import Path
 from typing import List, Optional
 from re import match, compile, VERBOSE
 from assemblyline_client import get_client
+from assemblyline_client.submit import (
+    read_toml,
+    add_config_url,
+    DEFAULT_CONFIG,
+    DEFAULT_TOML_PATH,
+)
 from threading import Timer
 
 VALID_LOG_LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR]
@@ -14,7 +21,7 @@ DOMAIN_REGEX = (
     r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
 )
 URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
+FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX}|localhost)(?::\\d{{2,5}})?){URI_PATH}?$"
 
 DEFAULT_SERVICES = ["Static Analysis", "Extraction", "Networking", "Antivirus"]
 RESERVED_CHARACTERS = [
@@ -51,8 +58,6 @@ _VALID_UTF8 = compile(
     VERBOSE,
 )
 
-DEFAULT_CFG = "~/.al/submit.cfg"
-
 
 def init_logging(log_file) -> logging.Logger:
     # These are details related to the log file.
@@ -66,6 +71,212 @@ def init_logging(log_file) -> logging.Logger:
     logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
     log = logging.getLogger(__name__)
     return log
+
+
+def parse_args(args=None, al_incident=None):
+    from sys import argv
+    from argparse import ArgumentParser, SUPPRESS
+
+    if al_incident is None:
+        if "analyzer" in argv[0]:
+            al_incident = "Analyzer"
+        elif "downloader" in argv[0]:
+            al_incident = "Downloader"
+        elif "submitter" in argv[0]:
+            al_incident = "Submitter"
+        else:
+            al_incident = None
+
+    parser = ArgumentParser(
+        description=f"Assemblyline Incident {al_incident or 'Manager'}"
+    )
+
+    if al_incident is None:
+        subparsers = parser.add_subparsers()
+        p_analyze = subparsers.add_parser("analyzer", help="Analyzer")
+        p_download = subparsers.add_parser("downloader", help="Downloader")
+        p_submit = subparsers.add_parser("submitter", help="Submitter")
+    else:
+        p_analyze = p_download = p_submit = parser
+
+    parser.add_argument(
+        "--config",
+        default=DEFAULT_TOML_PATH,
+        help=f"Read options from the specified TOML file.",
+    )
+    parser.add_argument("--server", help="The target URL that hosts Assemblyline.")
+    parser.add_argument("--url", dest="server", help=SUPPRESS)
+    parser.add_argument(
+        "--insecure", action="store_true", help="Ignore SSL errors (insecure!)"
+    )
+    parser.add_argument(
+        "--do_not_verify_ssl", action="store_true", dest="insecure", help=SUPPRESS
+    )
+    parser.add_argument("--server_crt", help=SUPPRESS)
+    parser.add_argument(
+        "--server-crt",
+        metavar='"/path/to/server.crt"',
+        help=SUPPRESS,
+    )
+
+    parser.add_argument(
+        "-u",
+        "--user",
+        metavar='"user"',
+        help="Your Assemblyline account username.",
+    )
+    parser.add_argument("--username", dest="user", help=SUPPRESS)
+    parser.add_argument(
+        "-k",
+        "--apikey",
+        metavar='"MY_RANDOM_API_KEY"',
+        help="A path to a file that contains only your Assemblyline account API key. "
+        "NOTE that this API key requires write access.",
+    )
+    parser.add_argument(
+        "-p", "--password", metavar='"MYPASSWORD"', help=SUPPRESS
+    )  # help="Your Assemblyline account password."
+    parser.add_argument(
+        "--cert", metavar='"/path/to/pki.pem"', help=SUPPRESS
+    )  # "A path to a file that contains only your Assemblyline user certificate."
+
+    parser.add_argument(
+        "--incident-num",
+        help="The incident number that each file is associated with.",
+    )
+    parser.add_argument("--incident_num", help=SUPPRESS)
+    parser.add_argument(
+        "-t",
+        "--is_test",
+        action="store_true",
+        help="A flag that indicates that you're running a test.",
+    )
+
+    if al_incident in (None, "Submitter"):
+        p_submit.add_argument("path", nargs="+", help="Path to process.")
+        p_submit.add_argument(
+            "--classification",
+            default="TLP:AMBER",
+            help="TLP for the files in the path.",
+        )
+        p_submit.add_argument(
+            "--ttl", default=30, help="Days before submissions are removed."
+        )
+        p_submit.add_argument(
+            "--services", action="append", help="Assemblyline Service Selection."
+        )
+        parser.add_argument("--service_selection", help=SUPPRESS)
+        p_submit.add_argument(
+            "--resubmit-dynamic",
+            action="store_true",
+            help="Resubmit files over threshold (default 500).",
+        )
+        p_submit.add_argument(
+            "-f",
+            "--fresh",
+            action="store_true",
+            help="Resubmit files over threshold (default 500).",
+        )
+        p_submit.add_argument(
+            "--alert", action="store_true", help="Generate alerts for this submission."
+        )
+        p_submit.add_argument(
+            "--threads",
+            type=int,
+            default=0,
+            help="Number of threads that will ingest files to Assemblyline.",
+        )
+        p_submit.add_argument(
+            "--dedup-hashes",
+            action="store_true",
+            help="Generate alerts for this submission.",
+        )
+        p_submit.add_argument(
+            "--priority",
+            type=int,
+            default=100,
+            help="Generate alerts for this submission.",
+        )
+
+    if al_incident in (None, "Analyzer"):
+        p_analyze.add_argument(
+            "--min-score",
+            type=int,
+            help="The minimum score for files that we want to query from Assemblyline.",
+        )
+
+    if al_incident == "Downloader":
+        p_download.add_argument(
+            "--max-score",
+            type=int,
+            default=-1,
+            help="The maximum score for files that we want to download from Assemblyline.",
+        )
+        p_download.add_argument(
+            "--download-path",
+            required=al_incident is not None,
+            help="The path to the folder that we will download files to.",
+        )
+        p_download.add_argument(
+            "--upload-path",
+            default="*",
+            help="The base path from which the files were ingested from on the compromised system.",
+        )
+
+    if args is not None:
+        parsed_args = parser.parse_args(args)
+    else:
+        parsed_args = parser.parse_args()
+
+    args_dict = vars(parsed_args)
+
+    cfg = (copy(DEFAULT_CONFIG),)
+    cfg["incident"] = {}
+    config_path = args_dict.pop("config", None)
+    if config_path is not None:
+        try:
+            cfg.update(read_toml(config_path=config_path))
+        except FileNotFoundError as ex:
+            if config_path != DEFAULT_TOML_PATH:
+                raise ex
+
+    set_cli_args(args_dict, cfg)
+
+    if cfg["server"].get("url") is None:
+        add_config_url(cfg["server"])
+
+    # Validate auth is set
+    user = cfg["auth"].get("user")
+    apikey = cfg["auth"].get("apikey")
+    password = cfg["auth"].get("password")
+    cert = cfg["auth"].get("cert")
+
+    if not (cert or (user and apikey) or (user and password)):
+        parser.error(
+            "Authentication API Key or user certificate path must be provided."
+        )
+
+    # validate incident is set
+    incident_num = cfg["incident"].get("incident_num")
+    if not incident_num:
+        parser.error("Incident Number must be provided.")
+
+    return cfg
+
+
+def set_cli_args(args_dict, cfg):
+    """Update dict with CLI parameters"""
+    for key, value in args_dict.items():
+        if value is None:
+            continue
+        elif key == "server":
+            cfg["server"]["url"] = value
+        elif key == "server_crt":
+            cfg["server"]["cert"] = value
+        elif key in ("user", "password", "apikey", "insecure", "cert"):
+            cfg["auth"][key] = value
+        else:
+            cfg["incident"][key] = value
 
 
 class Client:
@@ -162,7 +373,8 @@ def prepare_apikey(apikey: str) -> str:
         return apikey.strip()
 
 
-# This code is from Assemblyline https://github.com/CybercentreCanada/assemblyline-base/blob/ae27b8a6c585a738573f7099dcde83fc5b3e36ee/assemblyline/common/str_utils.py#L108
+# This code is from Assemblyline
+# https://github.com/CybercentreCanada/assemblyline-base/blob/ae27b8a6c585/assemblyline/common/str_utils.py#L108
 def safe_str(s, force_str=False) -> str:
     return _escape_str(s, reversible=False, force_str=force_str)
 
@@ -215,37 +427,34 @@ def prepare_query_value(query_value: str) -> str:
 
 
 def get_config(ctx, _, filename):
-    try:
-        from tomllib import loads as toml_loads
-    except ImportError:
-        from toml import loads as toml_loads
-
     default_config = False
     if filename is None:
         default_config = True
-        filename = DEFAULT_CFG
+        filename = DEFAULT_TOML_PATH
 
     file_path = Path(filename).expanduser().resolve()
 
     try:
-        cfg_dict = toml_loads(file_path.read_text())
+        cfg_dict = read_toml(file_path)
     except FileNotFoundError:
         if default_config:
             return
         raise
 
     ctx.default_map = {}
-    ctx.default_map.update(cfg_dict.get("assemblyline", {}))
-    ctx.default_map.update(cfg_dict.get("al_incident", {}))
+    ctx.default_map.update(cfg_dict)
 
-    for key, value in ctx.default_map.items():
-        if isinstance(key, str) and key in ('apikey', 'path', 'download_path'):
-            current_path = Path('.')
-            target_path = Path(value).expanduser().resolve()
-            if target_path.is_relative_to(current_path):
-                path_str = str(target_path.relative_to(current_path))
-            else:
-                path_str = str(target_path)
-            ctx.default_map[key] = path_str
-        if key == 'service_selection' and isinstance(value, list):
-            ctx.default_map[key] = ','.join(value)
+
+def get_al_client(
+    server_url, user, apikey=None, password=None, cert=None, server_crt_or_verify=None
+):
+    # Create the Assemblyline Client
+    if cert:
+        al_client = get_client(server_url, cert=cert, verify=server_crt_or_verify)
+    elif password:
+        user_auth = (user, password)
+        al_client = get_client(server_url, auth=user_auth, verify=server_crt_or_verify)
+    else:
+        api_auth = (user, prepare_apikey(apikey))
+        al_client = get_client(server_url, apikey=api_auth, verify=server_crt_or_verify)
+    return al_client

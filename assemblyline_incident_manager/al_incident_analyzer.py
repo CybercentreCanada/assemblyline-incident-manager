@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file contains the code that does the "pulling". It requests all of the files that the user
 has submitted to Assemblyline for analysis via the "pusher".
@@ -8,19 +9,16 @@ There are 4 phases in the script, each documented accordingly.
 # The imports to make this thing work. All packages are default Python libraries except for the
 # assemblyline_client library.
 import logging
-import click
 from time import sleep, time
 import os
 
-from assemblyline_client import get_client
 from assemblyline_incident_manager.helper import (
     init_logging,
     print_and_log,
+    parse_args,
     _validate_url,
-    prepare_apikey,
     prepare_query_value,
-    DEFAULT_CFG,
-    get_config,
+    get_al_client,
 )
 
 # These are the names of the files which we will use for writing and reading information to
@@ -31,81 +29,38 @@ REPORT_FILE = "report.csv"
 log = init_logging(LOG_FILE)
 
 
-# These are click commands and options which allow the easy handling of command line arguments and flags
-@click.group(invoke_without_command=True)
-@click.option(
-    "-c",
-    "--config",
-    type=click.Path(dir_okay=False),
-    callback=get_config,
-    is_eager=True,
-    expose_value=False,
-    help=f"Read options from the specified TOML file (default {DEFAULT_CFG})",
-    show_default=True,
-)
-@click.option(
-    "--url",
-    required=True,
-    type=click.STRING,
-    help="The target URL that hosts Assemblyline.",
-)
-@click.option(
-    "-u",
-    "--username",
-    required=True,
-    type=click.STRING,
-    help="Your Assemblyline account username.",
-)
-@click.option(
-    "--apikey",
-    required=True,
-    type=click.Path(exists=True, readable=True),
-    help="A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.",
-)
-@click.option(
-    "--min_score",
-    default=0,
-    type=click.INT,
-    help="The minimum score for files that we want to query from Assemblyline.",
-)
-@click.option(
-    "--incident_num",
-    required=True,
-    type=click.STRING,
-    help="The incident number that each file is associated with.",
-)
-@click.option(
-    "-t",
-    "--is_test",
-    is_flag=True,
-    help="A flag that indicates that you're running a test.",
-)
-@click.option("--do_not_verify_ssl", is_flag=True, help="Ignore SSL errors (insecure!)")
-def main(
-    url: str,
-    username: str,
-    apikey: str,
-    min_score: int,
-    incident_num: str,
-    is_test: bool,
-    do_not_verify_ssl: bool,
-):
+def main(args=None):
     """
     Example 1:
-    al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+    al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
 
     Example 2:
     al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100
     """
+
+    arg_dict = parse_args(args, al_incident="Analyzer")
+    auth = arg_dict.get("auth", {})
+    server = arg_dict.get("server", {})
+    incident = arg_dict.get("incident", {})
+
+    user = auth.get("user")
+    password = auth.get("password")
+    apikey = auth.get("apikey")
+    cert = auth.get("cert")
+
+    server_url = server.get("url")
+    insecure = auth.get("insecure")
+    server_crt_or_verify = server.get("cert") or not insecure
+
+    incident_num = prepare_query_value(incident.get("incident_num"))
+
+    min_score = incident.get("min_score", 0)
+
     # Here is the query that we will be using to retrieve all submission details
-    print(
-        """al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100"""
-    )
-    incident_num = prepare_query_value(incident_num)
     query = f'metadata.incident_number:"{incident_num}" AND max_score:>={min_score}'
     print_and_log(log, f"INFO,Query: {query}", logging.DEBUG)
 
-    if is_test:
+    if arg_dict.get("is_test"):
         print_and_log(
             log, f"INFO,The query that you will make is: {query}", logging.DEBUG
         )
@@ -116,17 +71,14 @@ def main(
         return
 
     # Parameter validation
-    if not _validate_url(log, url):
+    if not _validate_url(log, server_url):
         return
 
     # No trailing forward slashes in the URL!
-    url = url.rstrip("/")
+    server_url = server_url.rstrip("/")
 
-    apikey_val = prepare_apikey(apikey)
-
-    # Create the Assemblyline Client
-    al_client = get_client(
-        url, apikey=(username, apikey_val), verify=not do_not_verify_ssl
+    al_client = get_al_client(
+        server_url, user, apikey, password, cert, server_crt_or_verify
     )
 
     report_file = open(REPORT_FILE, "a")
@@ -154,7 +106,7 @@ def main(
 
         for file in submission_details["files"]:
             file_name = _prepare_file_name(submission_details["metadata"]["filename"])
-            msg = f"{file_name},{file['sha256']},{submission_details['max_score']},{url}/submission/report/{sid},{submission_details['errors']}\n"
+            msg = f"{file_name},{file['sha256']},{submission_details['max_score']},{server}/submission/report/{sid},{submission_details['errors']}\n"
             print_and_log(log, msg, logging.DEBUG)
             report_file.write(msg)
             number_of_files_with_results += 1
