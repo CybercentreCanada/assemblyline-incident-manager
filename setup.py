@@ -48,8 +48,7 @@ setup(
     },
     install_requires=[
         "assemblyline-client",
-        "click",
-        "toml",
+        "tomli",
     ],
     extras_require={"test": ["pytest", "pytest_mock"]},
     keywords="development assemblyline client incident gc canada cse-cst cse cst",

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file contains the code that does the "pushing". It submits all of the files that the  user
 wants to have submitted to Assemblyline for analysis.
@@ -7,7 +8,6 @@ from pathlib import Path
 
 # The imports to make this thing work. All packages are default Python libraries except for the
 # assemblyline_client library.
-import click
 import logging
 import os
 from hashlib import sha256
@@ -21,9 +21,7 @@ from assemblyline_incident_manager.helper import (
     init_logging,
     print_and_log,
     validate_parameters,
-    prepare_apikey,
     safe_str,
-    Client,
     prepare_query_value,
     parse_args,
     get_al_client,
@@ -75,7 +73,7 @@ def get_id_from_data(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 
-def main(args=None):
+def main(args=None, arg_dict=None):
     """
     Example 1:
     al-incident-submitter --url="https://<domain-of-Assemblyline-instance>" \
@@ -87,7 +85,8 @@ def main(args=None):
     global hash_table
     global total_file_count
 
-    arg_dict = parse_args(args, al_incident="Submitter")
+    if arg_dict is None:
+        arg_dict = parse_args(args, al_incident="Submitter")
 
     auth = arg_dict.get("auth", {})
     server = arg_dict.get("server", {})
@@ -115,14 +114,9 @@ def main(args=None):
     # Confirm that given path is to a directory
     if incident.get("is_test"):
         # Create the Assemblyline Client
-        al_client = get_al_client(
-            server.get("url"),
-            auth.get("user"),
-            auth.get("apikey"),
-            auth.get("password"),
-            auth.get("cert"),
-            server_crt_or_verify,
-        )
+        al_client = get_al_client(server, auth, log)
+        if al_client is None:
+            return
         _test_ingest_file(
             al_client, settings, incident.get("incident_num"), incident.get("alert")
         )
@@ -183,14 +177,7 @@ def main(args=None):
 
     for _ in range(max_workers):
         # Creating a thread containing a unique AL client
-        al_client = get_al_client(
-            server.get("url"),
-            auth.get("user"),
-            auth.get("apikey"),
-            auth.get("password"),
-            auth.get("cert"),
-            server_crt_or_verify,
-        )
+        al_client = get_al_client(server, auth, log)
 
         worker = Thread(
             target=_thr_queue_reader, args=(file_queue, al_client), daemon=True

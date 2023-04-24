@@ -16,7 +16,6 @@ from assemblyline_incident_manager.helper import (
     init_logging,
     print_and_log,
     parse_args,
-    _validate_url,
     prepare_query_value,
     get_al_client,
 )
@@ -29,7 +28,7 @@ REPORT_FILE = "report.csv"
 log = init_logging(LOG_FILE)
 
 
-def main(args=None):
+def main(args=None, arg_dict=None):
     """
     Example 1:
     al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
@@ -38,26 +37,18 @@ def main(args=None):
     al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100
     """
 
-    arg_dict = parse_args(args, al_incident="Analyzer")
+    if arg_dict is None:
+        arg_dict = parse_args(args, al_incident="Analyzer")
     auth = arg_dict.get("auth", {})
     server = arg_dict.get("server", {})
     incident = arg_dict.get("incident", {})
-
-    user = auth.get("user")
-    password = auth.get("password")
-    apikey = auth.get("apikey")
-    cert = auth.get("cert")
-
-    server_url = server.get("url")
-    insecure = auth.get("insecure")
-    server_crt_or_verify = server.get("cert") or not insecure
 
     incident_num = prepare_query_value(incident.get("incident_num"))
 
     min_score = incident.get("min_score", 0)
 
     # Here is the query that we will be using to retrieve all submission details
-    query = f'metadata.incident_number:"{incident_num}" AND max_score:>={min_score}'
+    query = f'metadata.incident_number:"{incident_num}" AND min_score:>={min_score}'
     print_and_log(log, f"INFO,Query: {query}", logging.DEBUG)
 
     if arg_dict.get("is_test"):
@@ -70,16 +61,9 @@ def main(args=None):
     if os.path.exists(REPORT_FILE) and not _handle_overwrite():
         return
 
-    # Parameter validation
-    if not _validate_url(log, server_url):
+    al_client = get_al_client(server, auth, log)
+    if not al_client:
         return
-
-    # No trailing forward slashes in the URL!
-    server_url = server_url.rstrip("/")
-
-    al_client = get_al_client(
-        server_url, user, apikey, password, cert, server_crt_or_verify
-    )
 
     report_file = open(REPORT_FILE, "a")
     report_file.write("FilePath,SHA256,Score,URL,Errors\n")

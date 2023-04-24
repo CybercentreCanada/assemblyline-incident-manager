@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This file contains the code that does the "pulling". It requests all of the files that the user
 has submitted to Assemblyline for analysis via the "pusher".
@@ -12,7 +13,6 @@ There are 4 phases in the script, each documented accordingly.
 # The imports to make this thing work. All packages are default Python libraries except for the
 # assemblyline_client library.
 import logging
-import click
 import os
 from time import time, sleep
 from threading import Thread
@@ -22,12 +22,9 @@ from assemblyline_client import Client4
 from assemblyline_incident_manager.helper import (
     init_logging,
     print_and_log,
-    _validate_url,
-    prepare_apikey,
     prepare_query_value,
+    parse_args,
     Client,
-    DEFAULT_TOML,
-    get_config,
 )
 
 # These are the names of the files which we will use for writing and reading information to
@@ -39,87 +36,7 @@ log = init_logging(LOG_FILE)
 total_downloaded = 0
 
 
-# These are click commands and options which allow the easy handling of command line arguments and flags
-@click.group(invoke_without_command=True)
-@click.option(
-    "-c",
-    "--config",
-    type=click.Path(dir_okay=False),
-    callback=get_config,
-    is_eager=True,
-    expose_value=False,
-    help=f"Read options from the specified TOML file (default {DEFAULT_TOML})",
-    show_default=True,
-)
-@click.option(
-    "--url",
-    required=True,
-    type=click.STRING,
-    help="The target URL that hosts Assemblyline.",
-)
-@click.option(
-    "-u",
-    "--username",
-    required=True,
-    type=click.STRING,
-    help="Your Assemblyline account username.",
-)
-@click.option(
-    "--apikey",
-    required=True,
-    type=click.Path(exists=True, readable=True),
-    help="A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires read access.",
-)
-@click.option(
-    "--max_score",
-    required=True,
-    default=1,
-    type=click.INT,
-    help="The maximum score for files that we want to download from Assemblyline.",
-)
-@click.option(
-    "--incident_num",
-    required=True,
-    type=click.STRING,
-    help="The incident number that each file is associated with.",
-)
-@click.option(
-    "--download_path",
-    required=True,
-    type=click.Path(exists=False),
-    help="The path to the folder that we will download files to.",
-)
-@click.option(
-    "--upload_path",
-    required=True,
-    type=click.Path(exists=False),
-    help="The base path from which the files were ingested from on the compromised system.",
-)
-@click.option(
-    "-t",
-    "--is_test",
-    is_flag=True,
-    help="A flag that indicates that you're running a test.",
-)
-@click.option(
-    "--num_of_downloaders",
-    default=1,
-    type=click.INT,
-    help="The number of threads that will be created to facilitate downloading the files.",
-)
-@click.option("--do_not_verify_ssl", is_flag=True, help="Ignore SSL errors (insecure!)")
-def main(
-    url: str,
-    username: str,
-    apikey: str,
-    max_score: int,
-    incident_num: str,
-    download_path: str,
-    upload_path,
-    is_test: bool,
-    num_of_downloaders: int,
-    do_not_verify_ssl: bool,
-):
+def main(args=None, arg_dict=None):
     """
     Example 1:
     al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
@@ -127,12 +44,31 @@ def main(
     Example 2:
     al-incident-downloader --config al_config.toml --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
     """
-    # Here is the query that we will be using to retrieve all submission details
-    incident_num = prepare_query_value(incident_num)
-    prepared_upload_path = prepare_query_value(upload_path)
-    query = f'metadata.incident_number:"{incident_num}" AND max_score:<={max_score} AND metadata.filename:*{prepared_upload_path}*'
 
-    if is_test:
+    if arg_dict is None:
+        arg_dict = parse_args(args, al_incident="Downloader")
+
+    auth = arg_dict.get("auth", {})
+    server = arg_dict.get("server", {})
+    incident = arg_dict.get("incident", {})
+
+    incident_num = prepare_query_value(incident.get("incident_num"))
+
+    max_score = incident.get("max_score")
+    upload_path = incident.get("upload_path", "")
+    download_path = incident.get("download_path")
+    if not upload_path:
+        prepared_upload_path = upload_path
+    else:
+        prepared_upload_path = prepare_query_value(upload_path)
+    # Here is the query that we will be using to retrieve all submission details
+    query = (
+        f'metadata.incident_number:"{incident_num}" '
+        f"AND max_score:<={max_score} "
+        f"AND metadata.filename:*{prepared_upload_path}*"
+    )
+
+    if incident.get("is_test"):
         print_and_log(
             log, f"INFO,The query that you will make is: {query}.", logging.DEBUG
         )
@@ -161,17 +97,8 @@ def main(
     if not overwrite_all and not add_unique:
         return
 
-    # Parameter validation
-    if not _validate_url(log, url):
-        return
-
-    # No trailing forward slashes in the URL!
-    url = url.rstrip("/")
-
-    apikey_val = prepare_apikey(apikey)
-
     # Create the Assemblyline Client
-    al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
+    al_client = Client(server, auth, log).al_client
 
     # Create a generator that yields the SIDs for our query
     submission_res = al_client.search.stream.submission(query, fl="sid")
@@ -191,11 +118,15 @@ def main(
     file_queue = Queue()
     workers = []
 
-    for _ in range(num_of_downloaders):
+    if incident.get("threads", 0) == 0:
+        # From https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
+        max_workers = min(32, os.cpu_count() + 4)
+    else:
+        max_workers = incident.get("threads")
+
+    for _ in range(max_workers):
         # Creating a thread containing a unique AL client
-        worker_al_client = Client(
-            log, url, username, apikey_val, do_not_verify_ssl
-        ).al_client
+        worker_al_client = Client(server, auth, log).al_client
 
         worker = Thread(
             target=_thr_queue_reader, args=(file_queue, worker_al_client), daemon=True
@@ -267,7 +198,7 @@ def main(
         print_and_log(log, "INFO,Waiting for the queue to empty...", logging.DEBUG)
         sleep(1)
 
-    for _ in range(num_of_downloaders):
+    for _ in range(max_workers):
         file_queue.put("DONE")
 
     # Time to clock out!

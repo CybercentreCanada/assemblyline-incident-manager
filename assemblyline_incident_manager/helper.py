@@ -92,7 +92,7 @@ def parse_args(args=None, al_incident=None):
     )
 
     if al_incident is None:
-        subparsers = parser.add_subparsers()
+        subparsers = parser.add_subparsers(dest="incident_manager")
         p_analyze = subparsers.add_parser("analyzer", help="Analyzer")
         p_download = subparsers.add_parser("downloader", help="Downloader")
         p_submit = subparsers.add_parser("submitter", help="Submitter")
@@ -205,7 +205,7 @@ def parse_args(args=None, al_incident=None):
             help="The minimum score for files that we want to query from Assemblyline.",
         )
 
-    if al_incident == "Downloader":
+    if al_incident in (None, "Downloader"):
         p_download.add_argument(
             "--max-score",
             type=int,
@@ -219,9 +219,17 @@ def parse_args(args=None, al_incident=None):
         )
         p_download.add_argument(
             "--upload-path",
-            default="*",
             help="The base path from which the files were ingested from on the compromised system.",
         )
+        try:
+            p_download.add_argument(
+                "--threads",
+                type=int,
+                default=0,
+                help="Number of threads that will download files from Assemblyline.",
+            )
+        except Exception:
+            pass
 
     if args is not None:
         parsed_args = parser.parse_args(args)
@@ -230,7 +238,7 @@ def parse_args(args=None, al_incident=None):
 
     args_dict = vars(parsed_args)
 
-    cfg = (copy(DEFAULT_CONFIG),)
+    cfg = copy(DEFAULT_CONFIG)
     cfg["incident"] = {}
     config_path = args_dict.pop("config", None)
     if config_path is not None:
@@ -282,33 +290,27 @@ def set_cli_args(args_dict, cfg):
 class Client:
     def __init__(
         self,
+        server: dict,
+        auth: dict,
         log: logging.Logger,
-        url: str,
-        username: str,
-        apikey: str,
-        do_not_verify_ssl: bool,
     ) -> None:
         self.al_client = None
-        self._thr_refresh_client(log, url, username, apikey, do_not_verify_ssl)
+        self._thr_refresh_client(server, auth, log)
 
     def _thr_refresh_client(
         self,
+        server: dict,
+        auth: dict,
         log: logging.Logger,
-        url: str,
-        username: str,
-        apikey: str,
-        do_not_verify_ssl: bool,
     ) -> None:
         print_and_log(
             log, "ADMIN,Refreshing the Assemblyline Client...,,", logging.DEBUG
         )
-        self.al_client = get_client(
-            url, apikey=(username, apikey), verify=not do_not_verify_ssl
-        )
+        self.al_client = get_al_client(server, auth, log)
         thr = Timer(
             1800,
             self._thr_refresh_client,
-            (log, url, username, apikey, do_not_verify_ssl),
+            (server, auth, log),
         )
         thr.daemon = True
         thr.start()
@@ -445,16 +447,30 @@ def get_config(ctx, _, filename):
     ctx.default_map.update(cfg_dict)
 
 
-def get_al_client(
-    server_url, user, apikey=None, password=None, cert=None, server_crt_or_verify=None
-):
+def get_al_client(server, auth, log):
     # Create the Assemblyline Client
-    if cert:
-        al_client = get_client(server_url, cert=cert, verify=server_crt_or_verify)
-    elif password:
-        user_auth = (user, password)
-        al_client = get_client(server_url, auth=user_auth, verify=server_crt_or_verify)
+
+    # Parameter validation
+    if not _validate_url(log, server.get("url")):
+        return
+
+    # No trailing forward slashes in the URL!
+    server["url"] = server.get("url").rstrip("/")
+
+    server_crt_or_verify = server.get("cert") or not auth.get("insecure")
+
+    if auth.get("cert"):
+        al_client = get_client(
+            server.get("url"), cert=auth.get("cert"), verify=server_crt_or_verify
+        )
+    elif auth.get("password"):
+        user_auth = (auth.get("user"), auth.get("password"))
+        al_client = get_client(
+            server.get("url"), auth=user_auth, verify=server_crt_or_verify
+        )
     else:
-        api_auth = (user, prepare_apikey(apikey))
-        al_client = get_client(server_url, apikey=api_auth, verify=server_crt_or_verify)
+        api_auth = (auth.get("user"), prepare_apikey(auth.get("apikey")))
+        al_client = get_client(
+            server.get("url"), apikey=api_auth, verify=server_crt_or_verify
+        )
     return al_client
