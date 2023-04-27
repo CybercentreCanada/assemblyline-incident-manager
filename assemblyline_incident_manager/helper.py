@@ -1,7 +1,7 @@
 import logging
 from copy import copy
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Union, Optional
 from re import match, compile, VERBOSE
 from assemblyline_client import get_client
 from assemblyline_client.submit import (
@@ -21,7 +21,7 @@ DOMAIN_REGEX = (
     r"(?:xn--)?(?:[A-Za-z0-9\u00a1-\uffff]{2,}\.?)"
 )
 URI_PATH = r"(?:[/?#]\S*)"
-FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX}|localhost)(?::\\d{{2,5}})?){URI_PATH}?$"
+FULL_URI = f"^((?:(?:[A-Za-z]*:)?//)?(?:\\S+(?::\\S*)?@)?(?:{IP_REGEX}|{DOMAIN_REGEX})(?::\\d{{2,5}})?){URI_PATH}?$"
 
 DEFAULT_SERVICES = ["Static Analysis", "Extraction", "Networking", "Antivirus"]
 RESERVED_CHARACTERS = [
@@ -153,7 +153,9 @@ def parse_args(args=None, al_incident=None):
     )
 
     if al_incident in (None, "Submitter"):
-        p_submit.add_argument("path", nargs="+", help="Path to process.")
+        p_submit.add_argument(
+            "path", nargs="+", type=valid_path, help="Path to process."
+        )
         p_submit.add_argument(
             "--classification",
             default="TLP:AMBER",
@@ -288,28 +290,18 @@ def set_cli_args(args_dict, cfg):
 
 
 class Client:
-    def __init__(
-        self,
-        server: dict,
-        auth: dict,
-        log: logging.Logger,
-    ) -> None:
+    def __init__(self, log: logging.Logger, server: dict, auth: dict) -> None:
         self.al_client = None
-        self._thr_refresh_client(server, auth, log)
+        self._refresh_client(log, server, auth)
 
-    def _thr_refresh_client(
-        self,
-        server: dict,
-        auth: dict,
-        log: logging.Logger,
-    ) -> None:
+    def _refresh_client(self, log: logging.Logger, server: dict, auth: dict) -> None:
         print_and_log(
             log, "ADMIN,Refreshing the Assemblyline Client...,,", logging.DEBUG
         )
-        self.al_client = get_al_client(server, auth, log)
+        self.al_client = get_al_client(log, server, auth)
         thr = Timer(
             1800,
-            self._thr_refresh_client,
+            self._refresh_client,
             (server, auth, log),
         )
         thr.daemon = True
@@ -428,26 +420,7 @@ def prepare_query_value(query_value: str) -> str:
     return query_value
 
 
-def get_config(ctx, _, filename):
-    default_config = False
-    if filename is None:
-        default_config = True
-        filename = DEFAULT_TOML_PATH
-
-    file_path = Path(filename).expanduser().resolve()
-
-    try:
-        cfg_dict = read_toml(file_path)
-    except FileNotFoundError:
-        if default_config:
-            return
-        raise
-
-    ctx.default_map = {}
-    ctx.default_map.update(cfg_dict)
-
-
-def get_al_client(server, auth, log):
+def get_al_client(log: logging.Logger, server: dict, auth: dict):
     # Create the Assemblyline Client
 
     # Parameter validation
@@ -474,3 +447,18 @@ def get_al_client(server, auth, log):
             server.get("url"), apikey=api_auth, verify=server_crt_or_verify
         )
     return al_client
+
+
+def valid_path(path_to_validate: Union[str, Path], type_enforce: str = None) -> Path:
+    """
+    Validate path. Set type_enforce value to "dir" or "file" to enforce the type.
+    """
+    path = Path(path_to_validate)
+    if path.exists():
+        if type_enforce is None:
+            return path
+        if type_enforce == "dir" and path.is_dir():
+            return path
+        if type_enforce == "file" and path.is_file():
+            return path
+    raise ValueError

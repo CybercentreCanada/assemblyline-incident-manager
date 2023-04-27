@@ -98,7 +98,7 @@ def main(args=None, arg_dict=None):
         return
 
     # Create the Assemblyline Client
-    al_client = Client(server, auth, log).al_client
+    al_client = Client(log, server, auth).al_client
 
     # Create a generator that yields the SIDs for our query
     submission_res = al_client.search.stream.submission(query, fl="sid")
@@ -114,19 +114,22 @@ def main(args=None, arg_dict=None):
     for _, _, files in os.walk(download_path):
         total_already_downloaded += len(files)
 
-    entered = False
-    file_queue = Queue()
-    workers = []
-
     if incident.get("threads", 0) == 0:
         # From https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor
         max_workers = min(32, os.cpu_count() + 4)
     else:
         max_workers = incident.get("threads")
 
+    if max_workers > len(sids):
+        max_workers = len(sids)
+
+    entered = False
+    file_queue = Queue()
+    workers = []
+
     for _ in range(max_workers):
         # Creating a thread containing a unique AL client
-        worker_al_client = Client(server, auth, log).al_client
+        worker_al_client = Client(log, server, auth).al_client
 
         worker = Thread(
             target=_thr_queue_reader, args=(file_queue, worker_al_client), daemon=True
@@ -237,19 +240,21 @@ def _handle_overwrite(download_dir: str) -> (bool, bool):
     add_unique = False
     overwrite = input(
         f"The download directory {download_dir} already exists. Do you wish to overwrite all contents? [y/n]:"
-    )
-    if overwrite == "y":
+    ).lower()
+    if "y" in overwrite:
         overwrite_all = True
-    elif overwrite == "n":
+    elif "n" in overwrite:
         add_missing = input(
-            f"The download directory {download_dir} already exists. Do you wish to download additional files to this directory? [y/n]:"
-        )
-        if add_missing == "y":
+            f"The download directory {download_dir} already exists. "
+            f"Do you wish to download additional files to this directory? [y/n]:"
+        ).lower()
+        if "y" in add_missing:
             add_unique = True
-        elif add_missing == "n":
+        elif "n" in add_missing:
             print_and_log(
                 log,
-                f"INFO,The download directory {download_dir} already exists. You chose not to download additional files and to exit.",
+                f"INFO,The download directory {download_dir} already exists. "
+                f"You chose not to download additional files and to exit.",
                 logging.DEBUG,
             )
         else:

@@ -61,7 +61,7 @@ def main(args=None, arg_dict=None):
     if os.path.exists(REPORT_FILE) and not _handle_overwrite():
         return
 
-    al_client = get_al_client(server, auth, log)
+    al_client = get_al_client(log, server, auth)
     if not al_client:
         return
 

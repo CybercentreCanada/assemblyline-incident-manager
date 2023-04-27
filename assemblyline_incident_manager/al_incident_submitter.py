@@ -24,7 +24,7 @@ from assemblyline_incident_manager.helper import (
     safe_str,
     prepare_query_value,
     parse_args,
-    get_al_client,
+    Client,
 )
 
 # These are the names of the files which we will use for writing and reading information to
@@ -42,7 +42,7 @@ FILE_PATHS_WRITER = open(FILE_PATHS, "a+", encoding="utf-8")
 SKIPPED_FILE_PATHS_WRITER = open(SKIPPED_FILE_PATHS, "a+", encoding="utf-8")
 
 # These are the max and min size of files able to be submitted to Assemblyline, in bytes
-MAX_FILE_SIZE = 100000000
+MAX_FILE_SIZE = 100_000_000
 MIN_FILE_SIZE = 1
 
 log = init_logging(LOG_FILE)
@@ -92,8 +92,6 @@ def main(args=None, arg_dict=None):
     server = arg_dict.get("server", {})
     incident = arg_dict.get("incident", {})
 
-    server_crt_or_verify = server.get("cert") or not auth.get("insecure")
-
     # Parameter validation
     incident["incident_num"] = prepare_query_value(incident.get("incident_num"))
     service_selection = validate_parameters(
@@ -114,7 +112,7 @@ def main(args=None, arg_dict=None):
     # Confirm that given path is to a directory
     if incident.get("is_test"):
         # Create the Assemblyline Client
-        al_client = get_al_client(server, auth, log)
+        al_client = Client(log, server, auth).al_client
         if al_client is None:
             return
         _test_ingest_file(
@@ -177,10 +175,10 @@ def main(args=None, arg_dict=None):
 
     for _ in range(max_workers):
         # Creating a thread containing a unique AL client
-        al_client = get_al_client(server, auth, log)
+        worker_al_client = Client(log, server, auth).al_client
 
         worker = Thread(
-            target=_thr_queue_reader, args=(file_queue, al_client), daemon=True
+            target=_thr_queue_reader, args=(file_queue, worker_al_client), daemon=True
         )
         workers.append(worker)
 
@@ -192,7 +190,8 @@ def main(args=None, arg_dict=None):
     # Recursively go through every file in the provided folder and its sub-folders.
     for file_path in path_chain:
         prepared_file_path = safe_str(file_path)
-        # This happens in Windows when the file path is too long https://stackoverflow.com/questions/1365797/python-long-filename-support-broken-in-windows
+        # This happens in Windows when the file path is too long
+        # https://stackoverflow.com/questions/1365797/python-long-filename-support-broken-in-windows
         if not file_path.exists():
             file_path = Path(f"\\\\?\\{file_path}")
         if not file_path.is_file():
@@ -292,7 +291,7 @@ def main(args=None, arg_dict=None):
 
 def paths_to_chain(path_list):
     """
-    Convert list of strings to generator of Path objects.
+    Convert list of strings to generator of relative Path objects.
     """
     path_list = [Path(p) for p in path_list]
     path_chain = itertools.chain.from_iterable(
