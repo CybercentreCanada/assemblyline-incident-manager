@@ -8,9 +8,7 @@ def dummy_al_client_instance():
     class DummyStream:
         @staticmethod
         def submission(*args, **kwargs):
-            return [{
-                "sid": "blah"
-            }]
+            return [{"sid": "blah"}]
 
     class DummySearch:
         def __init__(self):
@@ -20,11 +18,9 @@ def dummy_al_client_instance():
         def __call__(self, *args, **kwargs):
             return {
                 "files": [{"sha256": "blah"}],
-                "metadata": {
-                    "filename": "blah"
-                },
+                "metadata": {"filename": "blah"},
                 "max_score": 0,
-                "errors": {}
+                "errors": {},
             }
 
         @staticmethod
@@ -41,58 +37,94 @@ def dummy_al_client_instance():
 
 class TestALIncidentAnalyzer:
     @staticmethod
-    @pytest.mark.parametrize("case, command_line_options", [
-        (
-                "invalid_url", [
-                    "--url", "blah",
-                    "--username", "blah",
-                    "--apikey", API_KEY_FILE,
-                    "--incident_num", "blah"
-                ]
-        ),
-        (
-                "testing", [
-                    "--url", "http://real_domain.com",
-                    "--username", "blah",
-                    "--apikey", API_KEY_FILE,
-                    "--incident_num", "blah",
+    @pytest.mark.parametrize(
+        "case, command_line_options",
+        [
+            (
+                "invalid_url",
+                [
+                    "--url",
+                    "blah",
+                    "--username",
+                    "blah",
+                    "--apikey",
+                    API_KEY_FILE,
+                    "--incident_num",
+                    "blah",
+                ],
+            ),
+            (
+                "testing",
+                [
+                    "--url",
+                    "http://real-domain.example.com",
+                    "--username",
+                    "blah",
+                    "--apikey",
+                    API_KEY_FILE,
+                    "--incident_num",
+                    "blah",
                     "--is_test",
-                ]
-        ),
-        (
-                "testing", [
-                    "--url", "http://real_domain.com",
-                    "--username", "blah",
-                    "--apikey", API_KEY_FILE,
-                    "--incident_num", "blah",
+                ],
+            ),
+            (
+                "testing",
+                [
+                    "--url",
+                    "http://real-domain.example.com",
+                    "--username",
+                    "blah",
+                    "--apikey",
+                    API_KEY_FILE,
+                    "--incident_num",
+                    "blah",
                     "-t",
-                ]
-        ),
-        (
-                "report_exists", [
-                    "--url", "http://real_domain.com",
-                    "--username", "blah",
-                    "--apikey", API_KEY_FILE,
-                    "--incident_num", "blah",
-                ]
-        ),
-        (
-                "write_report", [
-                    "--url", "http://real_domain.com",
-                    "--username", "blah",
-                    "--apikey", API_KEY_FILE,
-                    "--incident_num", "blah",
-                ]
-        ),
-    ])
+                ],
+            ),
+            (
+                "report_exists",
+                [
+                    "--url",
+                    "http://real-domain.example.com",
+                    "--username",
+                    "blah",
+                    "--apikey",
+                    API_KEY_FILE,
+                    "--incident_num",
+                    "blah",
+                ],
+            ),
+            (
+                "write_report",
+                [
+                    "--url",
+                    "http://real-domain.example.com",
+                    "--username",
+                    "blah",
+                    "--apikey",
+                    API_KEY_FILE,
+                    "--incident_num",
+                    "blah",
+                ],
+            ),
+        ],
+    )
     def test_main(case, command_line_options, dummy_al_client_instance, mocker):
-        from click.testing import CliRunner
         from os import urandom, remove
         from assemblyline_incident_manager.al_incident_analyzer import main, REPORT_FILE
-        mocker.patch("assemblyline_incident_manager.al_incident_analyzer.get_client", return_value=dummy_al_client_instance)
+
+        mocker.patch(
+            "assemblyline_incident_manager.helper.get_client",
+            return_value=dummy_al_client_instance,
+        )
 
         with open(API_KEY_FILE, "w") as f:
             f.write("blah")
+
+        try:
+            remove(REPORT_FILE)
+        except Exception:
+            pass
 
         if case == "report_exists":
             file_contents = urandom(100)
@@ -100,10 +132,9 @@ class TestALIncidentAnalyzer:
                 f.write(file_contents)
             mocker.patch("builtins.input", return_value="n")
 
-        # Then setup the test
-        runner = CliRunner()
-        result = runner.invoke(main, command_line_options)
-        assert result.exit_code == 0
+        # Then set up the test
+        result = main(command_line_options)
+        assert result is None
 
         if case == "report_exists":
             remove(REPORT_FILE)
@@ -111,11 +142,13 @@ class TestALIncidentAnalyzer:
             remove(REPORT_FILE)
         remove(API_KEY_FILE)
 
-
     @staticmethod
     def test_handle_overwrite(mocker):
         from os import urandom
-        from assemblyline_incident_manager.al_incident_analyzer import _handle_overwrite, REPORT_FILE
+        from assemblyline_incident_manager.al_incident_analyzer import (
+            _handle_overwrite,
+            REPORT_FILE,
+        )
 
         mocker.patch("builtins.input", return_value="n")
         assert _handle_overwrite() is False
@@ -130,10 +163,16 @@ class TestALIncidentAnalyzer:
         assert _handle_overwrite() is True
 
     @staticmethod
-    @pytest.mark.parametrize("file_name, expected_result", [
-        ("blah", "blah"),
-        ("blah,blah.blah", "blahblah.blah"),
-    ])
+    @pytest.mark.parametrize(
+        "file_name, expected_result",
+        [
+            ("blah", "blah"),
+            ("blah,blah.blah", "blahblah.blah"),
+        ],
+    )
     def test_prepare_file_name(file_name, expected_result):
-        from assemblyline_incident_manager.al_incident_analyzer import _prepare_file_name
+        from assemblyline_incident_manager.al_incident_analyzer import (
+            _prepare_file_name,
+        )
+
         assert _prepare_file_name(file_name) == expected_result
