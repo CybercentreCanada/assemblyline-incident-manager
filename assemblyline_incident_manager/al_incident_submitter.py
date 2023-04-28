@@ -324,7 +324,6 @@ def _freshen_up():
         file_path = Path(PATH)
         if not file_path.exists():
             continue
-        print(file_path)
         try:
             file_path.unlink(missing_ok=True)
         except PermissionError:

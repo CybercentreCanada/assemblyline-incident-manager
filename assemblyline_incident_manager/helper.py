@@ -278,14 +278,21 @@ def set_cli_args(args_dict, cfg):
     """Update dict with CLI parameters"""
     for key, value in args_dict.items():
         if value is None:
+            # Skip unset argparse values
             continue
         elif key == "server":
             cfg["server"]["url"] = value
         elif key == "server_crt":
             cfg["server"]["cert"] = value
         elif key in ("user", "password", "apikey", "insecure", "cert"):
+            if value is False and cfg.get('auth', {}).get(key) is not None:
+                # Skip unset store_true values, if the config file has the value set
+                continue
             cfg["auth"][key] = value
         else:
+            if value is False and cfg.get('incident', {}).get(key) is not None:
+                # Skip unset store_true values, if the config file has the value set
+                continue
             cfg["incident"][key] = value
 
 
