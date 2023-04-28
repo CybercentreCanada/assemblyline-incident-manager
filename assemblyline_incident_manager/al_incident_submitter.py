@@ -77,10 +77,12 @@ def main(args=None, arg_dict=None):
     """
     Example 1:
     al-incident-submitter --url="https://<domain-of-Assemblyline-instance>" \
-    --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/scan" --incident_num=123
+        --username="<user-name>" --apikey="/path/to/file/containing/apikey" \
+        --classification="<classification>" --service_selection="<service-name>,<service-name>" \
+        --incident_num=123 "/path/to/scan"
 
     Example 2:
-    al-incident-submitter --config al_config.toml --path="/path/to/scan" --incident_num=123
+    al-incident-submitter --config incident_config.toml --incident_num=123 "/path/to/scan"
     """
     global hash_table
     global total_file_count

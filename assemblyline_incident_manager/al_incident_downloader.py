@@ -39,10 +39,14 @@ total_downloaded = 0
 def main(args=None, arg_dict=None):
     """
     Example 1:
-    al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
+    al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" \
+        --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 \
+        --max_score=100 --download_path=/path/to/where/you/want/downloads \
+        --upload_path=/path/from/where/files/were/uploaded/from
 
     Example 2:
-    al-incident-downloader --config al_config.toml --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
+    al-incident-downloader --config incident_config.toml --incident_num=123 --max_score=100 \
+        --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
     """
 
     if arg_dict is None:

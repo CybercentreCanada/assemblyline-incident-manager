@@ -31,10 +31,11 @@ log = init_logging(LOG_FILE)
 def main(args=None, arg_dict=None):
     """
     Example 1:
-    al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+    al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" \
+        --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
 
     Example 2:
-    al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100
+    al-incident-analyzer --config incident_config.toml --incident_num=123 --min_score=100
     """
 
     if arg_dict is None:

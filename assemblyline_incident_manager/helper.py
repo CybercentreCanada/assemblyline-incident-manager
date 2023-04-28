@@ -58,6 +58,36 @@ _VALID_UTF8 = compile(
     VERBOSE,
 )
 
+_analyzer_epilog: str = """\
+Example 1:
+%(prog)s --url="https://<domain-of-Assemblyline-instance>" \\
+    --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+
+Example 2:
+%(prog)s --config incident_config.toml --incident_num=123 --min_score=100
+"""
+_downloader_epilog: str = """\
+Example 1:
+%(prog)s --url="https://<domain-of-Assemblyline-instance>" \\
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 \\
+    --max_score=100 --download_path=/path/to/where/you/want/downloads \\
+    --upload_path=/path/from/where/files/were/uploaded/from
+
+Example 2:
+%(prog)s --config incident_config.toml --incident_num=123 --max_score=100 \\
+    --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
+"""
+_submitter_epilog: str = """\
+Example 1:
+%(prog)s --url="https://<domain-of-Assemblyline-instance>" \\
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" \\
+    --classification="<classification>" --service_selection="<service-name>,<service-name>" \\ 
+    --incident_num=123 "/path/to/scan"
+
+Example 2:
+%(prog)s --config incident_config.toml --incident_num=123 "/path/to/scan"
+"""
+
 
 def init_logging(log_file) -> logging.Logger:
     # These are details related to the log file.
@@ -75,7 +105,7 @@ def init_logging(log_file) -> logging.Logger:
 
 def parse_args(args=None, al_incident=None):
     from sys import argv
-    from argparse import ArgumentParser, SUPPRESS
+    from argparse import ArgumentParser, RawTextHelpFormatter, SUPPRESS
 
     if al_incident is None:
         if "analyzer" in argv[0]:
@@ -88,7 +118,8 @@ def parse_args(args=None, al_incident=None):
             al_incident = None
 
     parser = ArgumentParser(
-        description=f"Assemblyline Incident {al_incident or 'Manager'}"
+        description=f"Assemblyline Incident {al_incident or 'Manager'}",
+        formatter_class=RawTextHelpFormatter,
     )
 
     if al_incident is None:
@@ -153,6 +184,7 @@ def parse_args(args=None, al_incident=None):
     )
 
     if al_incident in (None, "Submitter"):
+        p_submit.epilog = _submitter_epilog
         p_submit.add_argument(
             "path", nargs="+", type=valid_path, help="Path to process."
         )
@@ -177,7 +209,7 @@ def parse_args(args=None, al_incident=None):
             "-f",
             "--fresh",
             action="store_true",
-            help="Resubmit files over threshold (default 500).",
+            help="Ignore file list for resuming previous submission.",
         )
         p_submit.add_argument(
             "--alert", action="store_true", help="Generate alerts for this submission."
@@ -191,16 +223,17 @@ def parse_args(args=None, al_incident=None):
         p_submit.add_argument(
             "--dedup-hashes",
             action="store_true",
-            help="Generate alerts for this submission.",
+            help="Do not submit files with identical hashes for this submission.",
         )
         p_submit.add_argument(
             "--priority",
             type=int,
             default=100,
-            help="Generate alerts for this submission.",
+            help="Set the priority of the submission.",
         )
 
     if al_incident in (None, "Analyzer"):
+        p_analyze.epilog = _analyzer_epilog
         p_analyze.add_argument(
             "--min-score",
             type=int,
@@ -208,6 +241,7 @@ def parse_args(args=None, al_incident=None):
         )
 
     if al_incident in (None, "Downloader"):
+        p_download.epilog = _downloader_epilog
         p_download.add_argument(
             "--max-score",
             type=int,
@@ -285,12 +319,12 @@ def set_cli_args(args_dict, cfg):
         elif key == "server_crt":
             cfg["server"]["cert"] = value
         elif key in ("user", "password", "apikey", "insecure", "cert"):
-            if value is False and cfg.get('auth', {}).get(key) is not None:
+            if value is False and cfg.get("auth", {}).get(key) is not None:
                 # Skip unset store_true values, if the config file has the value set
                 continue
             cfg["auth"][key] = value
         else:
-            if value is False and cfg.get('incident', {}).get(key) is not None:
+            if value is False and cfg.get("incident", {}).get(key) is not None:
                 # Skip unset store_true values, if the config file has the value set
                 continue
             cfg["incident"][key] = value

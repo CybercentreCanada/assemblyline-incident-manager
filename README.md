@@ -28,73 +28,81 @@ This repository contains three Python scripts used for bulk triaging file using 
 ## Submitter
 ```
 al-incident-submitter --help
-Usage: al-incident-submitter [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-submitter [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                             [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                             [-t] [--classification CLASSIFICATION] [--ttl TTL]
+                             [--services SERVICES] [--resubmit-dynamic] [-f] [--alert] [--threads THREADS]
+                             [--dedup-hashes] [--priority PRIORITY]
+                             path [path ...]
 
-  Example 1: al-incident-submitter --url="https://<domain-of-Assemblyline-instance>"  --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/scan" --incident_num=123
+Assemblyline Incident Submitter
 
-  Example 2: al-incident-submitter --config al_config.toml --path="/path/to/scan" --incident_num=123
+positional arguments:
+  path                  Path to process.
 
-Options:
-  -c, --config FILE         Read option defaults from the specified TOML file
-                            [default: ~/al_incident_config.toml]
-  --url TEXT                The target URL that hosts Assemblyline.
-                            [required]
-  --username TEXT           Your Assemblyline account username.  [required]
-  --apikey TEXT             A path to a file that contains only your
-                            Assemblyline account API key. NOTE that this API
-                            key requires write access.  [required]
-  --ttl INTEGER             The amount of time that you want your Assemblyline
-                            submissions to live on the Assemblyline system (in
-                            days).
-  --classification TEXT     The classification level for each file submitted
-                            to Assemblyline.  [required]
-  --service_selection TEXT  A comma-separated list (no spaces!) of service
-                            names (case-sensitive) to send files to. If not
-                            provided, all services will be selected.
-  -t, --is_test             A flag that indicates that you're running a test.
-  --path PATH               The directory path containing files that you want
-                            to submit to Assemblyline.  [required]
-  -f, --fresh               Restart ingestion from the beginning.
-  --incident_num TEXT       The incident number for each file to be associated
-                            with.  [required]
-  --resubmit-dynamic        All files that score higher than 500 will be
-                            resubmitted for dynamic analysis.
-  --alert                   Generate alerts for this submission.
-  --threads INTEGER         Number of threads that will ingest files to
-                            Assemblyline.
-  --dedup_hashes            Only submit files with unique hashes. If you want
-                            100% file coverage in a given path, do not use
-                            this flag
-  --priority INTEGER        Provide a priority number which will cause the
-                            ingestion to go to a specific priority queue.
-  --do_not_verify_ssl       Ignore SSL errors (insecure!)
-  --help                    Show this message and exit.
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --classification CLASSIFICATION
+                        TLP for the files in the path.
+  --ttl TTL             Days before submissions are removed.
+  --services SERVICES   Assemblyline Service Selection.
+  --resubmit-dynamic    Resubmit files over threshold (default 500).
+  -f, --fresh           Ignore file list for resuming previous submission.
+  --alert               Generate alerts for this submission.
+  --threads THREADS     Number of threads that will ingest files to Assemblyline.
+  --dedup-hashes        Do not submit files with identical hashes for this submission.
+  --priority PRIORITY   Set the priority of the submission.
+
+Example 1:
+al-incident-submitter --url="https://<domain-of-Assemblyline-instance>" \
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" \
+    --classification="<classification>" --service_selection="<service-name>,<service-name>" \ 
+    --incident_num=123 "/path/to/scan"
+
+Example 2:
+al-incident-submitter --config incident_config.toml --incident_num=123 "/path/to/scan"
 ```
 
 ## Analyzer
 ```
 al-incident-analyzer --help
-Usage: al-incident-analyzer [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-analyzer [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                            [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                            [-t] [--min-score MIN_SCORE]
 
-  Example 1: al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+Assemblyline Incident Analyzer
 
-  Example 2: al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --min-score MIN_SCORE
+                        The minimum score for files that we want to query from Assemblyline.
 
-Options:
-  -c, --config FILE    Read option defaults from the specified TOML file
-                       [default: ~/al_incident_config.toml]
-  --url TEXT           The target URL that hosts Assemblyline.  [required]
-  -u, --username TEXT  Your Assemblyline account username.  [required]
-  --apikey PATH        A path to a file that contains only your Assemblyline
-                       account API key. NOTE that this API key requires write
-                       access.  [required]
-  --min_score INTEGER  The minimum score for files that we want to query from
-                       Assemblyline.
-  --incident_num TEXT  The incident number that each file is associated with.
-                       [required]
-  -t, --is_test        A flag that indicates that you're running a test.
-  --do_not_verify_ssl  Ignore SSL errors (insecure!)
-  --help               Show this message and exit.
+Example 1:
+al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" \
+    --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+
+Example 2:
+al-incident-analyzer --config incident_config.toml --incident_num=123 --min_score=100
 ```
 
 Now check the `report.csv` file that was created. This file will contain what files are safe/unsafe.
@@ -102,39 +110,43 @@ Now check the `report.csv` file that was created. This file will contain what fi
 ## Downloader
 ```
 al-incident-downloader --help
-Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-downloader [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                              [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                              [-t] [--max-score MAX_SCORE] --download-path DOWNLOAD_PATH
+                              [--upload-path UPLOAD_PATH] [--threads THREADS]
 
-  Example 1: 
-  al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
 
-  Example 2: 
-  al-incident-downloader --config al_config.toml --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
+Assemblyline Incident Downloader
 
-Options:
-  -c, --config FILE             Read option defaults from the specified TOML
-                                file  [default: ~/al_incident_config.toml]
-  --url TEXT                    The target URL that hosts Assemblyline.
-                                [required]
-  -u, --username TEXT           Your Assemblyline account username.
-                                [required]
-  --apikey PATH                 A path to a file that contains only your
-                                Assemblyline account API key. NOTE that this
-                                API key requires read access.  [required]
-  --max_score INTEGER           The maximum score for files that we want to
-                                download from Assemblyline.  [required]
-  --incident_num TEXT           The incident number that each file is
-                                associated with.  [required]
-  --download_path PATH          The path to the folder that we will download
-                                files to.  [required]
-  --upload_path PATH            The base path from which the files were
-                                ingested from on the compromised system.
-                                [required]
-  -t, --is_test                 A flag that indicates that you're running a
-                                test.
-  --num_of_downloaders INTEGER  The number of threads that will be created to
-                                facilitate downloading the files.
-  --do_not_verify_ssl           Ignore SSL errors (insecure!)
-  --help                        Show this message and exit.
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --max-score MAX_SCORE
+                        The maximum score for files that we want to download from Assemblyline.
+  --download-path DOWNLOAD_PATH
+                        The path to the folder that we will download files to.
+  --upload-path UPLOAD_PATH
+                        The base path from which the files were ingested from on the compromised system.
+  --threads THREADS     Number of threads that will download files from Assemblyline.
+
+Example 1:
+al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" \
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 \
+    --max_score=100 --download_path=/path/to/where/you/want/downloads \
+    --upload_path=/path/from/where/files/were/uploaded/from
+
+Example 2:
+al-incident-downloader --config incident_config.toml --incident_num=123 --max_score=100 \
+    --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
 ```
 
 If you check the download path you supplied, you should have all files downloaded there.
@@ -171,73 +183,81 @@ Ce répertoire contient trois scripts Python pour assisté le triage de grande q
 ## Submitter
 ```
 al-incident-submitter --help
-Usage: al-incident-submitter [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-submitter [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                             [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                             [-t] [--classification CLASSIFICATION] [--ttl TTL]
+                             [--services SERVICES] [--resubmit-dynamic] [-f] [--alert] [--threads THREADS]
+                             [--dedup-hashes] [--priority PRIORITY]
+                             path [path ...]
 
-  Example 1: al-incident-submitter --url="https://<domain-of-Assemblyline-instance>"  --username="<user-name>" --apikey="/path/to/file/containing/apikey" --classification="<classification>" --service_selection="<service-name>,<service-name>" --path="/path/to/scan" --incident_num=123
+Assemblyline Incident Submitter
 
-  Example 2: al-incident-submitter --config al_config.toml --path="/path/to/scan" --incident_num=123
+positional arguments:
+  path                  Path to process.
 
-Options:
-  -c, --config FILE         Read option defaults from the specified TOML file
-                            [default: ~/al_incident_config.toml]
-  --url TEXT                The target URL that hosts Assemblyline.
-                            [required]
-  --username TEXT           Your Assemblyline account username.  [required]
-  --apikey TEXT             A path to a file that contains only your
-                            Assemblyline account API key. NOTE that this API
-                            key requires write access.  [required]
-  --ttl INTEGER             The amount of time that you want your Assemblyline
-                            submissions to live on the Assemblyline system (in
-                            days).
-  --classification TEXT     The classification level for each file submitted
-                            to Assemblyline.  [required]
-  --service_selection TEXT  A comma-separated list (no spaces!) of service
-                            names (case-sensitive) to send files to. If not
-                            provided, all services will be selected.
-  -t, --is_test             A flag that indicates that you're running a test.
-  --path PATH               The directory path containing files that you want
-                            to submit to Assemblyline.  [required]
-  -f, --fresh               Restart ingestion from the beginning.
-  --incident_num TEXT       The incident number for each file to be associated
-                            with.  [required]
-  --resubmit-dynamic        All files that score higher than 500 will be
-                            resubmitted for dynamic analysis.
-  --alert                   Generate alerts for this submission.
-  --threads INTEGER         Number of threads that will ingest files to
-                            Assemblyline.
-  --dedup_hashes            Only submit files with unique hashes. If you want
-                            100% file coverage in a given path, do not use
-                            this flag
-  --priority INTEGER        Provide a priority number which will cause the
-                            ingestion to go to a specific priority queue.
-  --do_not_verify_ssl       Ignore SSL errors (insecure!)
-  --help                    Show this message and exit.
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --classification CLASSIFICATION
+                        TLP for the files in the path.
+  --ttl TTL             Days before submissions are removed.
+  --services SERVICES   Assemblyline Service Selection.
+  --resubmit-dynamic    Resubmit files over threshold (default 500).
+  -f, --fresh           Ignore file list for resuming previous submission.
+  --alert               Generate alerts for this submission.
+  --threads THREADS     Number of threads that will ingest files to Assemblyline.
+  --dedup-hashes        Do not submit files with identical hashes for this submission.
+  --priority PRIORITY   Set the priority of the submission.
+
+Example 1:
+al-incident-submitter --url="https://<domain-of-Assemblyline-instance>" \
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" \
+    --classification="<classification>" --service_selection="<service-name>,<service-name>" \ 
+    --incident_num=123 "/path/to/scan"
+
+Example 2:
+al-incident-submitter --config incident_config.toml --incident_num=123 "/path/to/scan"
 ```
 
 ## Analyzer
 ```
 al-incident-analyzer --help
-Usage: al-incident-analyzer [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-analyzer [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                            [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                            [-t] [--min-score MIN_SCORE]
 
-  Example 1: al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+Assemblyline Incident Analyzer
 
-  Example 2: al-incident-analyzer --config ~/al_config.toml --incident_num=123 --min_score=100
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --min-score MIN_SCORE
+                        The minimum score for files that we want to query from Assemblyline.
 
-Options:
-  -c, --config FILE    Read option defaults from the specified TOML file
-                       [default: ~/al_incident_config.toml]
-  --url TEXT           The target URL that hosts Assemblyline.  [required]
-  -u, --username TEXT  Your Assemblyline account username.  [required]
-  --apikey PATH        A path to a file that contains only your Assemblyline
-                       account API key. NOTE that this API key requires write
-                       access.  [required]
-  --min_score INTEGER  The minimum score for files that we want to query from
-                       Assemblyline.
-  --incident_num TEXT  The incident number that each file is associated with.
-                       [required]
-  -t, --is_test        A flag that indicates that you're running a test.
-  --do_not_verify_ssl  Ignore SSL errors (insecure!)
-  --help               Show this message and exit.
+Example 1:
+al-incident-analyzer --url="https://<domain-of-Assemblyline-instance>" \
+    --user="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123
+
+Example 2:
+al-incident-analyzer --config incident_config.toml --incident_num=123 --min_score=100
 ```
 
 Regardez le rapport dans `report.csv`. Ce fichier contient un rapport des détections.
@@ -245,39 +265,43 @@ Regardez le rapport dans `report.csv`. Ce fichier contient un rapport des détec
 ## Downloader
 ```
 al-incident-downloader --help
-Usage: al-incident-downloader [OPTIONS] COMMAND [ARGS]...
+usage: al-incident-downloader [-h] [--config CONFIG] [--server SERVER] [--insecure] 
+                              [-u "user"] [-k "MY_RANDOM_API_KEY"] [--incident-num INCIDENT_NUM] 
+                              [-t] [--max-score MAX_SCORE] --download-path DOWNLOAD_PATH
+                              [--upload-path UPLOAD_PATH] [--threads THREADS]
 
-  Example 1: 
-  al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
 
-  Example 2: 
-  al-incident-downloader --config al_config.toml --incident_num=123 --max_score=100 --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
+Assemblyline Incident Downloader
 
-Options:
-  -c, --config FILE             Read option defaults from the specified TOML
-                                file  [default: ~/al_incident_config.toml]
-  --url TEXT                    The target URL that hosts Assemblyline.
-                                [required]
-  -u, --username TEXT           Your Assemblyline account username.
-                                [required]
-  --apikey PATH                 A path to a file that contains only your
-                                Assemblyline account API key. NOTE that this
-                                API key requires read access.  [required]
-  --max_score INTEGER           The maximum score for files that we want to
-                                download from Assemblyline.  [required]
-  --incident_num TEXT           The incident number that each file is
-                                associated with.  [required]
-  --download_path PATH          The path to the folder that we will download
-                                files to.  [required]
-  --upload_path PATH            The base path from which the files were
-                                ingested from on the compromised system.
-                                [required]
-  -t, --is_test                 A flag that indicates that you're running a
-                                test.
-  --num_of_downloaders INTEGER  The number of threads that will be created to
-                                facilitate downloading the files.
-  --do_not_verify_ssl           Ignore SSL errors (insecure!)
-  --help                        Show this message and exit.
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Read options from the specified TOML file.
+  --server SERVER       The target URL that hosts Assemblyline.
+  --insecure            Ignore SSL errors (insecure!)
+  -u "user", --user "user"
+                        Your Assemblyline account username.
+  -k "MY_RANDOM_API_KEY", --apikey "MY_RANDOM_API_KEY"
+                        A path to a file that contains only your Assemblyline account API key. NOTE that this API key requires write access.
+  --incident-num INCIDENT_NUM
+                        The incident number that each file is associated with.
+  -t, --is_test         A flag that indicates that you're running a test.
+  --max-score MAX_SCORE
+                        The maximum score for files that we want to download from Assemblyline.
+  --download-path DOWNLOAD_PATH
+                        The path to the folder that we will download files to.
+  --upload-path UPLOAD_PATH
+                        The base path from which the files were ingested from on the compromised system.
+  --threads THREADS     Number of threads that will download files from Assemblyline.
+
+Example 1:
+al-incident-downloader --url="https://<domain-of-Assemblyline-instance>" \
+    --username="<user-name>" --apikey="/path/to/file/containing/apikey" --incident_num=123 \
+    --max_score=100 --download_path=/path/to/where/you/want/downloads \
+    --upload_path=/path/from/where/files/were/uploaded/from
+
+Example 2:
+al-incident-downloader --config incident_config.toml --incident_num=123 --max_score=100 \
+    --download_path=/path/to/where/you/want/downloads --upload_path=/path/from/where/files/were/uploaded/from
 ```
 
 Tous les fichiers sans détections seront téléchargé dans le dossier choisi.
