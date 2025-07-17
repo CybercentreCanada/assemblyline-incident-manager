@@ -14,12 +14,21 @@ There are 4 phases in the script, each documented accordingly.
 import logging
 import click
 import os
+import tempfile
+import subprocess
+import shutil
 from time import time, sleep
 from threading import Thread
 from queue import Queue
+from typing import Tuple
+from pathlib import Path
 
+
+from cart.cart import unpack_stream
 from assemblyline_client import Client4
 from assemblyline_incident_manager.helper import init_logging, print_and_log, _validate_url, prepare_apikey, prepare_query_value, Client
+from assemblyline_client.v4_client.common.utils import ClientError
+
 
 # These are the names of the files which we will use for writing and reading information to
 LOG_FILE = "directory_downloader_log.csv"
@@ -28,7 +37,7 @@ log = init_logging(LOG_FILE)
 
 # Global
 total_downloaded = 0
-
+raw_download_available = True
 
 # These are click commands and options which allow the easy handling of command line arguments and flags
 @click.group(invoke_without_command=True)
@@ -57,6 +66,11 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
     # Here is the query that we will be using to retrieve all submission details
     incident_num = prepare_query_value(incident_num)
     prepared_upload_path = prepare_query_value(upload_path)
+
+    #normalize to linux format
+    prepared_upload_path = Path(prepared_upload_path).as_posix()
+
+
     query = f"metadata.incident_number:\"{incident_num}\" AND max_score:<={max_score} AND metadata.filename:*{prepared_upload_path}*"
 
     if is_test:
@@ -89,6 +103,7 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
 
     # Create the Assemblyline Client
     al_client = Client(log, url, username, apikey_val, do_not_verify_ssl).al_client
+    assert al_client is not None
 
     # Create a generator that yields the SIDs for our query
     submission_res = al_client.search.stream.submission(query, fl="sid")
@@ -126,6 +141,16 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
     unique_file_hashes = set()
     start_time = time()
     # "entered" is used so that we always enter this while loop regardless of completion status of sids
+
+
+    '''
+    if al_client is None:
+        raise ValueError()
+
+
+
+
+    '''
     while not entered or not all(al_client.submission.is_completed(sid) for sid in sids):
         entered = True
         for sid in sids[:]:
@@ -158,7 +183,12 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
             root_filepath = submitted_filepath.replace(upload_path, "")
             root_filepath = root_filepath.lstrip("\\")
             root_filepath = root_filepath.lstrip("/")
+            
+            #normalizes path retrieved to correct OS
+            root_filepath = os.path.normpath(root_filepath)  
+
             filepath_to_download = os.path.join(download_path, root_filepath)
+
             os.makedirs(os.path.dirname(filepath_to_download), exist_ok=True)
 
             if not overwrite_all and add_unique:
@@ -198,7 +228,7 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
     print_and_log(log, "INFO,Thank you for using Assemblyline :)", logging.DEBUG)
 
 
-def _handle_overwrite(download_dir: str) -> (bool, bool):
+def _handle_overwrite(download_dir: str) -> Tuple[bool, bool]:
     overwrite_all = False
     add_unique = False
     overwrite = input(
@@ -223,18 +253,73 @@ def _handle_overwrite(download_dir: str) -> (bool, bool):
 
 
 def _thr_queue_reader(file_queue: Queue, al_client: Client4) -> None:
-    global total_downloaded
+    global total_downloaded, raw_download_available
+
     while True:
         msg = file_queue.get()
         if msg == "DONE":
             return
-        else:
-            sha, download_path = msg
-            file_contents = al_client.file.download(sha, encoding="raw")
-            with open(download_path, "wb") as f:
-                f.write(file_contents)
-            print_and_log(log, f"INFO,Downloaded {download_path}.,{download_path},{sha}", logging.DEBUG)
+
+        sha, download_path = msg
+
+        #pass f as output in file download
+        #don't need temporary file with raw download
+        #don't download into memory
+
+        #is raw not available flag set?
+        if raw_download_available:
+            #try raw download to final destination
+            try:
+                #give output parameter, rather than buffer whole thing in memory
+                file_contents = al_client.file.download(sha, encoding="raw")
+                with open(download_path, "wb") as f:
+                    f.write(file_contents)
+                print_and_log(log, f"INFO,Downloaded {download_path} via raw.,{download_path},{sha}", logging.DEBUG)
+                total_downloaded += 1
+                continue
+            except ClientError as e:
+                #set global raw not available flag
+                if "RAW file download has been disabled" in str(e):
+                    raw_download_available = False
+                    print_and_log(log, f"WARNING,Raw download disabled. Switching to cart.,{download_path},{sha}", logging.WARNING)
+                else:
+                    print_and_log(log, f"ERROR,Raw download failed for {sha}: {str(e)},,{download_path},{sha}", logging.ERROR)
+                    continue
+
+        #fallback: download using cart
+        #try cart download to temp location
+
+        #download into temporary file
+        #temporary file into uncart stream
+        #output of uncart stream is 
+        #use spooled tmp file instead of named tmp file
+        #after download call finishes, seek 0 on temporary file
+        #when download fini
+
+        try:
+            with tempfile.SpooledTemporaryFile() as spooled:
+                al_client.file.download(sha, encoding="cart", output=spooled)
+                spooled.seek(0)
+                with open(download_path, "wb") as out:
+                    unpack_stream(spooled, out)
+
+            print_and_log(log, f"INFO,Downloaded and uncarted {download_path}.,{download_path},{sha}", logging.DEBUG)
             total_downloaded += 1
+
+
+        except Exception as e:
+            print_and_log(log, f"ERROR,Failed to download {sha} via cart: {str(e)},,{download_path},{sha}", logging.ERROR)
+
+
+def uncart_to_file(cart_data: str, final_path: str):
+    #using spooled tmp file
+    with tempfile.SpooledTemporaryFile() as spooled:
+        spooled.write(cart_data)
+        #seek set to 0 on tmp file
+        spooled.seek(0)
+        with open(final_path, "wb") as out:
+            unpack_stream(spooled, out)
+
 
 
 if __name__ == "__main__":

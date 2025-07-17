@@ -21,6 +21,9 @@ def submit_files():
     ]
     subprocess.run(cmd, check=True)
 
+#delete download paths
+#use tmp file module, 
+
 def download_files():
     if os.path.exists("/tmp/test_download"):
         shutil.rmtree("/tmp/test_download")
@@ -30,7 +33,7 @@ def download_files():
         "python3", "al_incident_downloader.py",
         "--url=https://malware.cyber.gc.ca/",
         "--username=jdhali-cyber",
-        "--apikey=/home/jdhaliwal/keys/JapjotRead.txt",
+        "--apikey=/home/jdhaliwal/keys/JapjotRead.txt", 
         "--incident_num=test-dup",
         "--max_score=10000",
         "--download_path=/tmp/test_download",

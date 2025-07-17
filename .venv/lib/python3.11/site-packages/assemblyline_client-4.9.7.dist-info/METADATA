@@ -1,0 +1,44 @@
+Metadata-Version: 2.1
+Name: assemblyline-client
+Version: 4.9.7
+Summary: Assemblyline v4 client library
+Home-page: https://github.com/CybercentreCanada/assemblyline_client
+Author: CSE-CST Assemblyline development team
+Author-email: assemblyline@cyber.gc.ca
+License: MIT
+Keywords: development assemblyline client gc canada cse-cst cse cst
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Description-Content-Type: text/markdown
+License-File: LICENCE.md
+Requires-Dist: pycryptodome
+Requires-Dist: requests
+Requires-Dist: requests[security]
+Requires-Dist: python-baseconv
+Requires-Dist: python-socketio[client]
+Requires-Dist: socketio-client==0.5.7.4
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: cart; extra == "test"
+Requires-Dist: assemblyline; extra == "test"
+
+# Assemblyline Client Library
+
+The Assemblyline Python client library facilitates issuing requests to Assemblyline.
+
+Documentation can be found here: https://cybercentrecanada.github.io/assemblyline4_docs/integration/python/
+
+# Client d'Assemblyline
+
+Ce client (librairie Python) facilite l'interaction avec l'interface de programmation d'application d'Assemblyline.
+
+La documentation se trouve ici: https://cybercentrecanada.github.io/assemblyline4_docs/fr/integration/python/

@@ -13,6 +13,7 @@ from typing import List
 from time import sleep, time
 from threading import Thread
 from queue import Queue
+from pathlib import Path
 
 from assemblyline_client import Client4
 from assemblyline_incident_manager.helper import init_logging, print_and_log, validate_parameters, prepare_apikey, safe_str, Client, prepare_query_value
@@ -322,8 +323,13 @@ def _ingest_file(
         alert: bool):
     print_and_log(
         log, f"INGEST,{prepared_file_path} ({sha}) is about to be ingested.,{prepared_file_path},{sha}", logging.DEBUG)
+
+        #normalize file path before uploading
+
+    normalized_filename = Path(file_path).as_posix()
+
     al_client.ingest(path=file_path, fname=sha, params=settings, alert=alert,
-                     metadata={"filename": file_path, "incident_number": incident_num})
+                     metadata={"filename": normalized_filename, "incident_number": incident_num})
     print_and_log(
         log, f"INGEST,{prepared_file_path} ({sha}) has been ingested.,{prepared_file_path},{sha}", logging.DEBUG)
 
