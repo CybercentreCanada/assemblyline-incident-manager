@@ -183,6 +183,8 @@ def main(url: str, username: str, apikey: str, max_score: int, incident_num: str
             root_filepath = submitted_filepath.replace(upload_path, "")
             root_filepath = root_filepath.lstrip("\\")
             root_filepath = root_filepath.lstrip("/")
+
+            
             
             #normalizes path retrieved to correct OS
             root_filepath = os.path.normpath(root_filepath)  
