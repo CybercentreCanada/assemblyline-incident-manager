@@ -44,3 +44,18 @@ def test_download_from_linux_path_on_windows():
     expected_final = r"D:\Downloads\file.txt"
     assert final_path == expected_final
 
+
+#windows to linux upload
+@pytest.mark.skipif(platform.system() != "Windows", reason="Run only on Windows")
+def test_windows_to_linux_path_normalization():
+    # Step 1: Simulate original Windows path
+    original_path = r"C:\Users\Japjot\Documents\project\file.txt"
+
+    # Step 2: Normalize to Linux style (as the uploader does)
+    normalized_for_upload = Path(original_path).as_posix()
+
+    # Step 3: Expected Linux-style result
+    expected_linux_path = "C:/Users/Japjot/Documents/project/file.txt"
+
+    # Step 4: Assert they match
+    assert normalized_for_upload == expected_linux_path

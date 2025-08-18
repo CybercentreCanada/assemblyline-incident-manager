@@ -1,62 +1,79 @@
 import os
-import subprocess
 import shutil
+import subprocess
+import tempfile
+import time
+from pathlib import Path
 
-def setup_test_files(base_dir="/tmp/test_upload"):
-    os.makedirs(f"{base_dir}/a", exist_ok=True)
-    os.makedirs(f"{base_dir}/b", exist_ok=True)
-    with open(f"{base_dir}/a/duplicate.txt", "w") as f:
-        f.write("This is a duplicate file")
-    shutil.copy(f"{base_dir}/a/duplicate.txt", f"{base_dir}/b/duplicate.txt")
+UPLOADER_CWD = Path(__file__).parent 
+UPLOAD_BASE = Path("/tmp/test_upload")
+USER = "jdhali-cyber"
+URL = "https://malware.cyber.gc.ca/"
+WRITE_KEY = "/home/jdhaliwal/keys/JapjotWrite.txt"
+READ_KEY = "/home/jdhaliwal/keys/JapjotRead.txt"
 
-def submit_files():
+def setup_test_files():
+    if UPLOAD_BASE.exists():
+        shutil.rmtree(UPLOAD_BASE)
+    (UPLOAD_BASE / "a").mkdir(parents=True, exist_ok=True)
+    (UPLOAD_BASE / "b").mkdir(parents=True, exist_ok=True)
+
+    content = b"This is a duplicate file"
+    (UPLOAD_BASE / "a" / "duplicate.txt").write_bytes(content)
+    # identical content → identical SHA
+    shutil.copyfile(UPLOAD_BASE / "a" / "duplicate.txt", UPLOAD_BASE / "b" / "duplicate.txt")
+
+def clean_submitter_state():
+    # submitter writes these in CWD
+    for fname in ("file_paths.txt", "skipped_files.txt"):
+        p = UPLOADER_CWD / fname
+        if p.exists():
+            p.unlink()
+
+def run_uploader(incident):
     cmd = [
         "python3", "al_incident_submitter.py",
-        "--url=https://malware.cyber.gc.ca/",
-        "--username=jdhali-cyber",
-        "--apikey=/home/jdhaliwal/keys/JapjotWrite.txt",
+        f"--url={URL}",
+        f"--username={USER}",
+        f"--apikey={WRITE_KEY}",
         "--classification=TLP:CLEAR",
-        "--path=/tmp/test_upload",
-        "--incident_num=test-dup"
+        f"--path={str(UPLOAD_BASE)}",
+        f"--incident_num={incident}",
+        "--fresh"  
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, cwd=UPLOADER_CWD)
 
-#delete download paths
-#use tmp file module, 
-
-def download_files():
-    if os.path.exists("/tmp/test_download"):
-        shutil.rmtree("/tmp/test_download")
-    os.makedirs("/tmp/test_download")
-
+def run_downloader(incident, download_dir):
     cmd = [
         "python3", "al_incident_downloader.py",
-        "--url=https://malware.cyber.gc.ca/",
-        "--username=jdhali-cyber",
-        "--apikey=/home/jdhaliwal/keys/JapjotRead.txt", 
-        "--incident_num=test-dup",
+        f"--url={URL}",
+        f"--username={USER}",
+        f"--apikey={READ_KEY}",
+        f"--incident_num={incident}",
         "--max_score=10000",
-        "--download_path=/tmp/test_download",
-        "--upload_path=/tmp/test_upload"
+        f"--download_path={download_dir}",      
+        f"--upload_path={str(UPLOAD_BASE)}",    # must match what was used on upload
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, cwd=UPLOADER_CWD)
 
+def assert_restored(download_dir):
+    p1 = Path(download_dir) / "a" / "duplicate.txt"
+    p2 = Path(download_dir) / "b" / "duplicate.txt"
+    assert p1.exists(), f"Missing file: {p1}"
+    assert p2.exists(), f"Missing file: {p2}"
+    # Optional: verify content, too
+    assert p1.read_bytes() == p2.read_bytes() == b"This is a duplicate file"
 
-def assert_both_files_restored():
-    path1 = "/tmp/test_download/a/duplicate.txt"
-    path2 = "/tmp/test_download/b/duplicate.txt"
-    assert os.path.exists(path1), f"Missing file: {path1}"
-    assert os.path.exists(path2), f"Missing file: {path2}"
-
-
-def test_deduplication_restores_all_duplicates():
-    print("Setting up test files...")
+def test_dedup_restores_all_paths():
+    incident = f"test-dup-{int(time.time())}"  # unique per run
     setup_test_files()
-    submit_files()
-    download_files()
-    assert_both_files_restored()
-    print("Deduplication test passed (both files restored correctly)")
+    clean_submitter_state()
+    run_uploader(incident)
 
+    with tempfile.TemporaryDirectory(prefix="al_download_") as dld:
+        run_downloader(incident, dld)
+        assert_restored(dld)
+        print("Dedup test passed: both duplicate paths restored.")
 
 if __name__ == "__main__":
-    test_deduplication_restores_all_duplicates()
+    test_dedup_restores_all_paths()
